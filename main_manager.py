@@ -5,6 +5,7 @@ import hyperopt.pyll.stochastic
 import math
 import tensorflow as tf
 import os
+import time
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
@@ -12,11 +13,17 @@ class Instruction(Enum):
     ADD_GRAPHS = 0
     INIT = 1
     EXIT = 2
+    TRAIN = 3
 
 class SimpleNet:
     def __init__(self, sess, cluster_id):
         self.sess = sess
         self.cluster_id = cluster_id
+
+    def get_variables(self):
+        return []
+    def set_values(self):
+        return
 
 class PBTCluster:
     def __init__(self, pop_size, comm):
@@ -63,7 +70,11 @@ class PBTCluster:
             req.wait()
 
     def train(self, until_step_num):
-        print('Train {} steps'.format(until_step_num))
+        reqs = []
+        for i in range(1, comm.Get_size()):
+            reqs.append(comm.isend((Instruction.TRAIN, until_step_num), dest=i))
+        for req in reqs:
+            req.wait()
 
     def get_hp_range_definition(self):
         range_def_dict = {
@@ -183,6 +194,10 @@ else:
                 worker_graphs.append(SimpleNet(sess, i))
         elif inst == Instruction.INIT:
             print('[{}]Initializing graphs'.format(rank))
+        elif inst == Instruction.TRAIN:
+            num_steps = data[1]
+            print('[{}]Train for {} steps'.format(rank, num_steps))
+            time.sleep(1)
         elif inst == Instruction.EXIT:
             break
         else:
