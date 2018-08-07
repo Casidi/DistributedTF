@@ -242,10 +242,12 @@ if rank == 0:
     print 'round 1'
     cluster.train(10)
     cluster.exploit()
+    cluster.explore()
     time.sleep(1)
     print 'round 2'
     cluster.train(10)
     cluster.exploit()
+    cluster.explore()
     time.sleep(1)
     print 'round 3'
     cluster.train(10)
@@ -272,7 +274,6 @@ else:
                 g.init_variables()
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
-            #time.sleep(random.uniform(0.0, 3.0)) #simulate the calculation time
             for g in worker_graphs:
                 g.train(num_steps)
                 print 'Graph {} step = {},  loss = {}'.format(g.cluster_id, g.train_step, g.get_loss())
