@@ -1,28 +1,59 @@
+# mpirun --oversubscribe -n 5 python main_manager.py
+#docker run hongfr/mpi-with-ssh
 from mpi4py import MPI
 from enum import Enum
 from hyperopt import hp
 import hyperopt.pyll.stochastic
 import math
 import tensorflow as tf
+import numpy as np
 import os
 import time
+import random
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-class Instruction(Enum):
+class WorkerInstruction(Enum):
     ADD_GRAPHS = 0
     INIT = 1
     EXIT = 2
     TRAIN = 3
+    GET = 4
 
 class SimpleNet:
     def __init__(self, sess, cluster_id):
         self.sess = sess
         self.cluster_id = cluster_id
+        self.train_step = 0
 
-    def get_variables(self):
-        return []
-    def set_values(self):
+        x_train = [[0.0, 1.0]]
+        y_train = [[1.0]]
+        self.input_layer = tf.constant(x_train)
+        self.w1 = tf.Variable(tf.random_uniform([2, 1]))
+        self.b1 = tf.Variable(tf.random_uniform([1]))
+        self.output_layer = tf.sigmoid(tf.matmul(self.input_layer, self.w1) + self.b1)
+
+        self.loss = tf.reduce_sum(tf.square(y_train - self.output_layer))
+        self.train_op = tf.train.GradientDescentOptimizer(1.0).minimize(self.loss)
+
+        self.vars = [self.w1, self.b1]
+
+    def init_variables(self):
+        self.sess.run([var.initializer for var in self.vars])
+
+    def train(self, num_steps):
+        for i in range(num_steps):
+            self.sess.run(self.train_op)
+            self.train_step += 1
+
+    def get_loss(self):
+        return self.sess.run(self.loss)
+
+    def get_values(self):
+        return [self.cluster_id] + self.sess.run([self.loss, self.w1, self.b1])
+
+    def set_values(self, values):
+
         return
 
 class PBTCluster:
@@ -50,7 +81,7 @@ class PBTCluster:
             begin = (worker_rank-1)*graphs_per_worker
             end = min(graphs_per_worker, graphs_to_make) + begin
             hparams_for_the_worker = all_hparams_need_training[begin: end]
-            reqs.append(comm.isend((Instruction.ADD_GRAPHS, hparams_for_the_worker, begin), dest=worker_rank))
+            reqs.append(comm.isend((WorkerInstruction.ADD_GRAPHS, hparams_for_the_worker, begin), dest=worker_rank))
             graphs_to_make -= graphs_per_worker
         for req in reqs:
             req.wait()
@@ -58,23 +89,56 @@ class PBTCluster:
     def initialize_all_graphs(self):
         reqs = []
         for i in range(1, comm.Get_size()):
-            reqs.append(comm.isend((Instruction.INIT, ), dest=i))
+            reqs.append(comm.isend((WorkerInstruction.INIT, ), dest=i))
         for req in reqs:
             req.wait()
 
     def kill_all_workers(self):
         reqs = []
         for i in range(1, comm.Get_size()):
-            reqs.append(comm.isend((Instruction.EXIT, ), dest=i))
+            reqs.append(comm.isend((WorkerInstruction.EXIT, ), dest=i))
         for req in reqs:
             req.wait()
 
     def train(self, until_step_num):
         reqs = []
         for i in range(1, comm.Get_size()):
-            reqs.append(comm.isend((Instruction.TRAIN, until_step_num), dest=i))
+            reqs.append(comm.isend((WorkerInstruction.TRAIN, until_step_num), dest=i))
         for req in reqs:
             req.wait()
+
+    def exploit(self):
+        reqs = []
+        for i in range(1, comm.Get_size()):
+            reqs.append(comm.isend((WorkerInstruction.GET, ), dest=i))
+        for req in reqs:
+            req.wait()
+
+        all_values = []
+        cluster_id_to_worker_rank = {}
+        for i in range(1, comm.Get_size()):
+            data = comm.recv(source=i)
+            all_values += data
+            for d in data:
+                cluster_id_to_worker_rank[d[0]] = i
+
+        # copy top 25% to bottom 25%
+        print 'After exploit'
+        all_values = sorted(all_values, key=lambda value: value[1])
+        num_graphs_to_copy = math.ceil(float(self.pop_size) / 4.0)
+        for i in range(num_graphs_to_copy):
+            top_index = i
+            bottom_index = len(all_values) - num_graphs_to_copy + i
+            all_values[bottom_index][1] = all_values[top_index][1] #copy loss, not necessary
+            all_values[bottom_index][2] = all_values[top_index][2] #copy w1
+            all_values[bottom_index][2] = all_values[top_index][2] #copy b1
+        print all_values
+
+        return
+
+    def explore(self):
+        return
+
 
     def get_hp_range_definition(self):
         range_def_dict = {
@@ -173,7 +237,17 @@ class PBTCluster:
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 if rank == 0:
-    cluster = PBTCluster(50, comm)
+    cluster = PBTCluster(10, comm)
+    time.sleep(1)
+    print 'round 1'
+    cluster.train(10)
+    cluster.exploit()
+    time.sleep(1)
+    print 'round 2'
+    cluster.train(10)
+    cluster.exploit()
+    time.sleep(1)
+    print 'round 3'
     cluster.train(10)
     cluster.kill_all_workers()
 else:
@@ -184,7 +258,7 @@ else:
     while True:
         data = comm.recv(source=0)
         inst = data[0]
-        if inst == Instruction.ADD_GRAPHS:
+        if inst == WorkerInstruction.ADD_GRAPHS:
             hparam_list = data[1]
             cluster_id_begin = data[2]
             cluster_id_end = cluster_id_begin + len(hparam_list)
@@ -192,13 +266,22 @@ else:
 
             for i in range(cluster_id_begin, cluster_id_end):
                 worker_graphs.append(SimpleNet(sess, i))
-        elif inst == Instruction.INIT:
+        elif inst == WorkerInstruction.INIT:
             print('[{}]Initializing graphs'.format(rank))
-        elif inst == Instruction.TRAIN:
+            for g in worker_graphs:
+                g.init_variables()
+        elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
-            print('[{}]Train for {} steps'.format(rank, num_steps))
-            time.sleep(1)
-        elif inst == Instruction.EXIT:
+            #time.sleep(random.uniform(0.0, 3.0)) #simulate the calculation time
+            for g in worker_graphs:
+                g.train(num_steps)
+                print 'Graph {} step = {},  loss = {}'.format(g.cluster_id, g.train_step, g.get_loss())
+        elif inst == WorkerInstruction.GET:
+            vars_to_send = []
+            for g in worker_graphs:
+                vars_to_send.append(g.get_values())
+            comm.send(vars_to_send, dest=0)
+        elif inst == WorkerInstruction.EXIT:
             break
         else:
             print('Invalid instruction!!!!')
