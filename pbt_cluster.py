@@ -90,7 +90,7 @@ class PBTCluster:
             bottom_index = len(all_values) - num_graphs_to_copy + i
             all_values[bottom_index][1] = all_values[top_index][1] #copy loss, not necessary
             all_values[bottom_index][2] = all_values[top_index][2] #copy w1
-            all_values[bottom_index][2] = all_values[top_index][2] #copy b1
+            all_values[bottom_index][3] = all_values[top_index][3] #copy b1
             graphs_need_updating.append(bottom_index)
         print all_values
 
@@ -108,11 +108,13 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
-        return
-
     def explore(self):
-        return
-
+        reqs = []
+        for i in range(self.comm.Get_size()):
+            if i != self.master_rank:
+                reqs.append(self.comm.isend((WorkerInstruction.EXPLORE, ), dest=i))
+        for req in reqs:
+            req.wait()
 
     def get_hp_range_definition(self):
         range_def_dict = {

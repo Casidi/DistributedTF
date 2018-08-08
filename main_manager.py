@@ -30,6 +30,8 @@ if rank == master_rank:
     time.sleep(1)
     print 'round 3'
     cluster.train(10)
+    cluster.exploit()
+    cluster.explore()
     cluster.kill_all_workers()
 else:
     config = tf.ConfigProto()
@@ -47,7 +49,9 @@ else:
             print('[{}]Got {} hparams'.format(rank, len(hparam_list)))
 
             for i in range(cluster_id_begin, cluster_id_end):
-                worker_graphs.append(SimpleNet(sess, i))
+                hparam = hparam_list[i-cluster_id_begin]
+                worker_graphs.append(SimpleNet(sess, i, hparam))
+                print hparam
         elif inst == WorkerInstruction.INIT:
             print('[{}]Initializing graphs'.format(rank))
             for g in worker_graphs:
@@ -69,6 +73,13 @@ else:
                     if g.cluster_id == v[0]:
                         print '[{}]Updating graph {}'.format(rank, g.cluster_id)
                         g.set_values(v)
+                        g.need_explore = True
+        elif inst == WorkerInstruction.EXPLORE:
+            for g in worker_graphs:
+                if g.need_explore:
+                    print '[{}]Exploring graph {}'.format(rank, g.cluster_id)
+                    g.perturb_hparams_and_update_graph()
+                    g.need_explore = False
         elif inst == WorkerInstruction.EXIT:
             break
         else:

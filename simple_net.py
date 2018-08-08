@@ -2,10 +2,12 @@ import tensorflow as tf
 import numpy as np
 
 class SimpleNet:
-    def __init__(self, sess, cluster_id):
+    def __init__(self, sess, cluster_id, hparams):
         self.sess = sess
         self.cluster_id = cluster_id
+        self.hparams = hparams
         self.train_step = 0
+        self.need_explore = False
 
         x_train = [[0.0, 1.0]]
         y_train = [[1.0]]
@@ -15,7 +17,12 @@ class SimpleNet:
         self.output_layer = tf.sigmoid(tf.matmul(self.input_layer, self.w1) + self.b1)
 
         self.loss = tf.reduce_sum(tf.square(y_train - self.output_layer))
-        self.train_op = tf.train.GradientDescentOptimizer(1.0).minimize(self.loss)
+
+        if hparams['opt_case']['optimizer'] == 'gd':
+            learn_rate = hparams['opt_case']['lr']
+            self.train_op = tf.train.GradientDescentOptimizer(learn_rate).minimize(self.loss)
+        else:
+            self.train_op = tf.train.GradientDescentOptimizer(1.0).minimize(self.loss)
 
         self.vars = [self.w1, self.b1]
 
@@ -26,6 +33,9 @@ class SimpleNet:
         for i in range(num_steps):
             self.sess.run(self.train_op)
             self.train_step += 1
+
+    def perturb_hparams_and_update_graph(self):
+        return
 
     def get_loss(self):
         return self.sess.run(self.loss)
