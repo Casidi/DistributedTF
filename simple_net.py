@@ -20,14 +20,17 @@ class SimpleNet:
 
         if hparams['opt_case']['optimizer'] == 'gd':
             learn_rate = hparams['opt_case']['lr']
-            self.train_op = tf.train.GradientDescentOptimizer(learn_rate).minimize(self.loss)
+            self.optimizer = tf.train.GradientDescentOptimizer(learn_rate)
         else:
-            self.train_op = tf.train.GradientDescentOptimizer(1.0).minimize(self.loss)
+            self.optimizer = tf.train.GradientDescentOptimizer(1.0)
+        #self.optimizer = tf.train.GradientDescentOptimizer(1.0)
 
-        self.vars = [self.w1, self.b1]
+        self.train_op = self.optimizer.minimize(self.loss)
+
+        self.trainable_vars = [self.w1, self.b1]
 
     def init_variables(self):
-        self.sess.run([var.initializer for var in self.vars])
+        self.sess.run([var.initializer for var in self.trainable_vars])
 
     def train(self, num_steps):
         for i in range(num_steps):
@@ -41,9 +44,19 @@ class SimpleNet:
         return self.sess.run(self.loss)
 
     def get_values(self):
-        return [self.cluster_id, self.get_loss()] + self.sess.run([self.w1, self.b1])
+        return [self.cluster_id, self.get_loss(), self.sess.run(self.trainable_vars), self.hparams]
 
     def set_values(self, values):
-        self.w1.load(values[2], self.sess)
-        self.b1.load(values[3], self.sess)
-        return
+        for i in range(len(self.trainable_vars)):
+            self.trainable_vars[i].load(values[2][i], self.sess)
+        
+        self.hparams = values[3]
+        if self.hparams['opt_case']['optimizer'] == 'gd':
+            learn_rate = self.hparams['opt_case']['lr']
+            self.optimizer = tf.train.GradientDescentOptimizer(learn_rate)
+        else:
+            self.optimizer = tf.train.GradientDescentOptimizer(1.0)
+        #self.optimizer = tf.train.GradientDescentOptimizer(1.0)
+
+        self.train_op = self.optimizer.minimize(self.loss)
+

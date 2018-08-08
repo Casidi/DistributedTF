@@ -8,3 +8,4 @@ class WorkerInstruction(Enum):
     GET = 4
     SET = 5
     EXPLORE = 6
+    GET_TRAIN_LOG = 7

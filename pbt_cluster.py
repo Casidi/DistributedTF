@@ -2,6 +2,9 @@ from hyperopt import hp
 import hyperopt.pyll.stochastic
 import math
 
+from matplotlib import pyplot
+import numpy as np
+
 from constants import WorkerInstruction
 
 class PBTCluster:
@@ -81,18 +84,19 @@ class PBTCluster:
                     cluster_id_to_worker_rank[d[0]] = i
 
         # copy top 25% to bottom 25%
-        print 'After exploit'
         all_values = sorted(all_values, key=lambda value: value[1])
+        print 'The ranking before exploit'
+        for i in all_values:
+            print 'graph {}, loss={}'.format(i[0], i[1])
         num_graphs_to_copy = math.ceil(float(self.pop_size) / 4.0)
         graphs_need_updating = []
         for i in range(num_graphs_to_copy):
             top_index = i
             bottom_index = len(all_values) - num_graphs_to_copy + i
             all_values[bottom_index][1] = all_values[top_index][1] #copy loss, not necessary
-            all_values[bottom_index][2] = all_values[top_index][2] #copy w1
-            all_values[bottom_index][3] = all_values[top_index][3] #copy b1
+            all_values[bottom_index][2] = all_values[top_index][2] #copy trainable variables
+            all_values[bottom_index][3] = all_values[top_index][3] #copy hparams
             graphs_need_updating.append(bottom_index)
-        print all_values
 
         #only update the bottom graphs
         worker_rank_to_graphs_need_updating = {}
@@ -103,8 +107,8 @@ class PBTCluster:
             worker_rank_to_graphs_need_updating[worker_rank].append(all_values[i])
 
         reqs = []
-        for rank, values in worker_rank_to_graphs_need_updating.iteritems():
-            reqs.append(self.comm.isend((WorkerInstruction.SET, values), dest=rank))
+        for worker_rank, values in worker_rank_to_graphs_need_updating.iteritems():
+            reqs.append(self.comm.isend((WorkerInstruction.SET, values), dest=worker_rank))
         for req in reqs:
             req.wait()
 
@@ -116,8 +120,46 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
+    def report_plot(self):
+        training_log = self.get_all_training_log()
+
+        linspace_x = np.linspace(start=0, stop=1, num=100)
+        linspace_y = np.linspace(start=0, stop=1, num=100)
+        x, y = np.meshgrid(linspace_x, linspace_y)
+        z = 1.2 - (x ** 2 + y ** 2)
+        
+        pyplot.xlabel(r'$\theta_0$')
+        pyplot.ylabel(r'$\theta_1$')
+        pyplot.xlim(0, 1)
+        pyplot.ylim(0, 1)
+        
+        pyplot.plot(zip(*training_log[0])[0], zip(*training_log[0])[1], '.', color='black')
+        pyplot.plot(zip(*training_log[1])[0], zip(*training_log[1])[1], '.', color='red')
+        pyplot.contour(x, y, z, colors='lightgray')
+        #pyplot.show()
+        pyplot.savefig('explore_only' + '.png')
+
+        return
+
+    def get_all_training_log(self):
+        reqs = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                reqs.append(self.comm.isend((WorkerInstruction.GET_TRAIN_LOG, ), dest=i))
+        for req in reqs:
+            req.wait()
+
+        all_logs = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                data = self.comm.recv(source=i)
+                all_logs += data
+        return all_logs
+
     def get_hp_range_definition(self):
         range_def_dict = {
+            'h_0': [0.0, 1.0], 'h_1': [0.0, 1.0],
+
             'optimizer_list': ['Adadelta', 'Adagrad', 'Momentum', \
                     'Adam', 'RMSProp', 'gd'],
             'lr': {
@@ -152,7 +194,13 @@ class PBTCluster:
     
     def load_hp_space(self):
         range_def = self.get_hp_range_definition()
-        space = {'opt_case':hp.choice('opt_case',
+        space = {
+            'h_0': hp.uniform('h_0', \
+                        range_def['h_0'][0], range_def['h_0'][1]),
+            'h_1': hp.uniform('h_1', \
+                        range_def['h_1'][0], range_def['h_1'][1]),
+
+            'opt_case':hp.choice('opt_case',
             [
                 {
                     'optimizer': 'Adadelta',
