@@ -31,7 +31,9 @@ class SimpleNet:
         return self.sess.run(self.loss)
 
     def get_values(self):
-        return [self.cluster_id] + self.sess.run([self.loss, self.w1, self.b1])
+        return [self.cluster_id, self.get_loss()] + self.sess.run([self.w1, self.b1])
 
     def set_values(self, values):
+        self.w1.load(values[2], self.sess)
+        self.b1.load(values[3], self.sess)
         return

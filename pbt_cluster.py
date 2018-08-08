@@ -84,13 +84,29 @@ class PBTCluster:
         print 'After exploit'
         all_values = sorted(all_values, key=lambda value: value[1])
         num_graphs_to_copy = math.ceil(float(self.pop_size) / 4.0)
+        graphs_need_updating = []
         for i in range(num_graphs_to_copy):
             top_index = i
             bottom_index = len(all_values) - num_graphs_to_copy + i
             all_values[bottom_index][1] = all_values[top_index][1] #copy loss, not necessary
             all_values[bottom_index][2] = all_values[top_index][2] #copy w1
             all_values[bottom_index][2] = all_values[top_index][2] #copy b1
+            graphs_need_updating.append(bottom_index)
         print all_values
+
+        #only update the bottom graphs
+        worker_rank_to_graphs_need_updating = {}
+        for i in range(self.comm.Get_size()):
+            worker_rank_to_graphs_need_updating[i] = []
+        for i in graphs_need_updating:
+            worker_rank = cluster_id_to_worker_rank[all_values[i][0]]
+            worker_rank_to_graphs_need_updating[worker_rank].append(all_values[i])
+
+        reqs = []
+        for rank, values in worker_rank_to_graphs_need_updating.iteritems():
+            reqs.append(self.comm.isend((WorkerInstruction.SET, values), dest=rank))
+        for req in reqs:
+            req.wait()
 
         return
 

@@ -6,3 +6,4 @@ class WorkerInstruction(Enum):
     EXIT = 2
     TRAIN = 3
     GET = 4
+    SET = 5

@@ -62,6 +62,13 @@ else:
             for g in worker_graphs:
                 vars_to_send.append(g.get_values())
             comm.send(vars_to_send, dest=master_rank)
+        elif inst == WorkerInstruction.SET:
+            vars_to_set = data[1]
+            for v in vars_to_set:
+                for g in worker_graphs:
+                    if g.cluster_id == v[0]:
+                        print '[{}]Updating graph {}'.format(rank, g.cluster_id)
+                        g.set_values(v)
         elif inst == WorkerInstruction.EXIT:
             break
         else:
