@@ -19,12 +19,12 @@ master_rank = 0
 if rank == master_rank:
     cluster = PBTCluster(2, comm, master_rank)
     time.sleep(1)
-    for i in range(10):
+    for i in range(30):
         print '\nround {}'.format(i)
         cluster.train(4)
         cluster.exploit()
         cluster.explore()
-        #time.sleep(0.5)
+        #time.sleep(0.5) #for better printing order
 
     cluster.report_plot()
     cluster.kill_all_workers()

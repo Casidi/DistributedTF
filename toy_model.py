@@ -14,15 +14,19 @@ class ToyModel:
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
             self.hparams['h_1'] = 1.0
+            self.lr = 0.02
         else:
             self.hparams['h_0'] = 1.0
             self.hparams['h_1'] = 0.0
+            self.lr = 0.02
 
         self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
         self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
         self.loss = tf.square((self.obj - self.surrogate_obj))
+        #self.loss = tf.square(self.theta_0) + tf.square(self.theta_1)
+        self.fake_loss = tf.square(self.theta_0) + tf.square(self.theta_1)
 
-        self.optimizer = tf.train.GradientDescentOptimizer(0.02)
+        self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
         self.train_op = self.optimizer.minimize(self.loss)
 
         self.trainable_vars = [self.theta_0, self.theta_1]
@@ -33,23 +37,33 @@ class ToyModel:
 
     def train(self, num_steps):
         for i in range(num_steps):
-            self.sess.run(self.train_op)
             self.train_log.append(self.sess.run(self.trainable_vars))
+            self.sess.run(self.train_op)
             self.train_step += 1
 
     def perturb_hparams_and_update_graph(self):
         return
 
+    #the loss is not the same as the loss to compute the gradients
     def get_loss(self):
-        return self.sess.run(self.loss)
+        return self.sess.run(self.fake_loss)
 
     def get_values(self):
         return [self.cluster_id, self.get_loss(), self.sess.run(self.trainable_vars), self.hparams]
 
     def set_values(self, values):
+        print 'loss before set = {} val_exp={} val_real={} h0h1={}, {}'.format(
+            self.sess.run([self.loss, self.obj, self.surrogate_obj]), 
+            values[2], self.sess.run(self.trainable_vars),
+            self.hparams['h_0'], self.hparams['h_1'])
+
         for i in range(len(self.trainable_vars)):
             self.trainable_vars[i].load(values[2][i], self.sess)
-        print 'loss after set = {} val_exp={} val_real={}'.format(self.sess.run([self.loss, self.obj, self.surrogate_obj]), values[2], self.sess.run(self.trainable_vars))
+
+        print 'loss after set = {} val_exp={} val_real={} h0h1={}, {}'.format(
+            self.sess.run([self.loss, self.obj, self.surrogate_obj]), 
+            values[2], self.sess.run(self.trainable_vars),
+            self.hparams['h_0'], self.hparams['h_1'])
         
         '''self.hparams = values[3]
         self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
