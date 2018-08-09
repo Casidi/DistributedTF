@@ -2,6 +2,9 @@ from hyperopt import hp
 import hyperopt.pyll.stochastic
 import math
 
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 from matplotlib import pyplot
 import numpy as np
 
