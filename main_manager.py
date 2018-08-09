@@ -18,11 +18,11 @@ rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank, do_exploit=True, do_explore=True)
+    cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=True, do_explore=False)
+    #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case(still dirty, needs to change the code around line 78 to make this work)
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=True)
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
     #The grid search case
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
