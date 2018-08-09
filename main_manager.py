@@ -17,16 +17,18 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
-    cluster = PBTCluster(2, comm, master_rank)
-    time.sleep(1)
-    for i in range(30):
-        print '\nRound {}'.format(i)
-        cluster.train(4)
-        #cluster.exploit()
-        cluster.explore()
-        #time.sleep(0.5) #for better printing order
+    #The PBT case
+    cluster = PBTCluster(2, comm, master_rank, do_exploit=True, do_explore=True)
+    #The exploit only case
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=True, do_explore=False)
+    #The explore only case(still dirty, needs to change the code around line 78 to make this work)
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=True)
+    #The grid search case
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
-    cluster.report_plot()
+    cluster.train(100)
+
+    cluster.report_plot_for_toy_model()
     cluster.kill_all_workers()
 else:
     config = tf.ConfigProto()
@@ -48,7 +50,6 @@ else:
                 #new_graph = SimpleNet(sess, i, hparam)
                 new_graph = ToyModel(sess, i, hparam)
                 worker_graphs.append(new_graph)
-                print hparam
         elif inst == WorkerInstruction.INIT:
             print('[{}]Initializing graphs'.format(rank))
             for g in worker_graphs:
@@ -73,7 +74,7 @@ else:
                         g.need_explore = True
         elif inst == WorkerInstruction.EXPLORE:
             for g in worker_graphs:
-                g.need_explore = True # dirty fix to generate the explore only graph
+                #g.need_explore = True # dirty fix to generate the explore only graph
                 if g.need_explore:
                     print '[{}]Exploring graph {}'.format(rank, g.cluster_id)
                     g.perturb_hparams_and_update_graph()

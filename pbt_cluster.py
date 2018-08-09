@@ -8,10 +8,12 @@ import numpy as np
 from constants import WorkerInstruction
 
 class PBTCluster:
-    def __init__(self, pop_size, comm, master_rank):
+    def __init__(self, pop_size, comm, master_rank, do_exploit=True, do_explore=True):
         self.pop_size = pop_size
         self.comm = comm
         self.master_rank = master_rank
+        self.do_exploit = do_exploit
+        self.do_explore = do_explore
 
         self.build_all_graphs()
         self.initialize_all_graphs()
@@ -34,7 +36,6 @@ class PBTCluster:
             if i != self.master_rank:
                 begin = num_workers_sent * graphs_per_worker
                 end = min(graphs_per_worker, graphs_to_make) + begin
-                print begin, end
                 hparams_for_the_worker = all_hparams_need_training[begin: end]
                 reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS, hparams_for_the_worker, begin), dest=i))
                 graphs_to_make -= graphs_per_worker
@@ -59,12 +60,25 @@ class PBTCluster:
             req.wait()
 
     def train(self, until_step_num):
-        reqs = []
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.TRAIN, until_step_num), dest=i))
-        for req in reqs:
-            req.wait()
+        round = 0
+        while until_step_num > 0:
+            print '\nRound {}'.format(round)
+            steps_to_train = min(4, until_step_num)
+
+            reqs = []
+            for i in range(0, self.comm.Get_size()):
+                if i != self.master_rank:
+                    reqs.append(self.comm.isend((WorkerInstruction.TRAIN, steps_to_train), dest=i))
+            for req in reqs:
+                req.wait()
+
+            until_step_num -= 4
+            round += 1
+
+            if self.do_exploit:
+                self.exploit()
+            if self.do_explore:
+                self.explore()
 
     def exploit(self):
         reqs = []
@@ -120,7 +134,7 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
-    def report_plot(self):
+    def report_plot_for_toy_model(self):
         training_log = self.get_all_training_log()
 
         linspace_x = np.linspace(start=0, stop=1, num=100)
@@ -137,9 +151,17 @@ class PBTCluster:
         pyplot.plot(zip(*training_log[1])[0], zip(*training_log[1])[1], '.', color='red')
         pyplot.contour(x, y, z, colors='lightgray')
         #pyplot.show()
-        pyplot.savefig('explore_only' + '.png')
 
-        return
+        if self.do_exploit and self.do_explore:
+            out_file_name = 'PBT.png'
+        elif self.do_exploit and not self.do_explore:
+            out_file_name = 'exploit_only.png'
+        elif not self.do_exploit and self.do_explore:
+            out_file_name = 'explore_only.png'
+        else:
+            out_file_name = 'grid_search.png'
+        pyplot.savefig(out_file_name)
+        print 'Writing results to {}'.format(out_file_name)
 
     def get_all_training_log(self):
         reqs = []
