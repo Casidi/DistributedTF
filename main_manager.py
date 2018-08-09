@@ -22,7 +22,7 @@ if rank == master_rank:
     for i in range(30):
         print '\nRound {}'.format(i)
         cluster.train(4)
-        cluster.exploit()
+        #cluster.exploit()
         cluster.explore()
         #time.sleep(0.5) #for better printing order
 
@@ -73,6 +73,7 @@ else:
                         g.need_explore = True
         elif inst == WorkerInstruction.EXPLORE:
             for g in worker_graphs:
+                g.need_explore = True # dirty fix to generate the explore only graph
                 if g.need_explore:
                     print '[{}]Exploring graph {}'.format(rank, g.cluster_id)
                     g.perturb_hparams_and_update_graph()

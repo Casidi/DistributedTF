@@ -137,7 +137,7 @@ class PBTCluster:
         pyplot.plot(zip(*training_log[1])[0], zip(*training_log[1])[1], '.', color='red')
         pyplot.contour(x, y, z, colors='lightgray')
         #pyplot.show()
-        pyplot.savefig('PBT' + '.png')
+        pyplot.savefig('explore_only' + '.png')
 
         return
 
