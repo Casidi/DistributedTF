@@ -31,9 +31,6 @@ if rank == master_rank:
     cluster.report_plot_for_toy_model()
     cluster.kill_all_workers()
 else:
-    config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.1
-    sess = tf.Session(config=config)
     worker_graphs = []
 
     while True:
@@ -48,7 +45,7 @@ else:
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
                 #new_graph = SimpleNet(sess, i, hparam)
-                new_graph = ToyModel(sess, i, hparam)
+                new_graph = ToyModel(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.INIT:
             print('[{}]Initializing graphs'.format(rank))

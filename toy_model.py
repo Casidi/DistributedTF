@@ -2,8 +2,7 @@ import tensorflow as tf
 import random
 
 class ToyModel:
-    def __init__(self, sess, cluster_id, hparams):
-        self.sess = sess
+    def __init__(self, cluster_id, hparams):
         self.cluster_id = cluster_id
         self.hparams = hparams
         self.train_step = 0
@@ -12,8 +11,7 @@ class ToyModel:
         self.perturb_factors = [0.8, 1.2]
         self.lr = 0.02
 
-        self.theta_0 = tf.Variable(0.9)
-        self.theta_1 = tf.Variable(0.9)
+        
 
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
@@ -22,7 +20,7 @@ class ToyModel:
             self.hparams['h_0'] = 1.0
             self.hparams['h_1'] = 0.0
 
-        self.build_graph_from_hparams()
+        self.build_graph_from_hparams(is_first_call=True)
         self.train_log = []
 
     def init_variables(self):
@@ -37,9 +35,7 @@ class ToyModel:
     def perturb_hparams_and_update_graph(self):
         self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)
         self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
-
-        #NOTE: We don't reload the variables here, but it seems working.
-        self.build_graph_from_hparams()
+        self.build_graph_from_hparams(is_first_call=False)
 
     #the loss is not the same as the loss to compute the gradients
     #this may be another bug of the paper
@@ -62,16 +58,33 @@ class ToyModel:
         self.optimizer = tf.train.GradientDescentOptimizer(0.02)
         self.train_op = self.optimizer.minimize(self.loss)'''
     
-    def build_graph_from_hparams(self):
-        self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
-        self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
-        self.loss = tf.square((self.obj - self.surrogate_obj))
-        self.fake_loss = tf.square(self.theta_0) + tf.square(self.theta_1)
+    def build_graph_from_hparams(self, is_first_call):
+        if not is_first_call:
+            old_values = self.sess.run(self.trainable_vars)
 
-        self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
-        self.train_op = self.optimizer.minimize(self.loss)
+        self.tf_graph = tf.Graph()
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = 0.1
+        self.sess = tf.Session(graph=self.tf_graph, config=config)
 
-        self.trainable_vars = [self.theta_0, self.theta_1]
+        
+        with self.tf_graph.as_default():
+            self.theta_0 = tf.Variable(0.9)
+            self.theta_1 = tf.Variable(0.9)
+            self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
+            self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
+            self.loss = tf.square((self.obj - self.surrogate_obj))
+            self.fake_loss = tf.square(self.theta_0) + tf.square(self.theta_1)
+
+            self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
+            self.train_op = self.optimizer.minimize(self.loss)
+
+            self.trainable_vars = [self.theta_0, self.theta_1]
+        self.init_variables()
+
+        if not is_first_call:
+            for i in range(len(self.trainable_vars)):
+                self.trainable_vars[i].load(old_values[i], self.sess)
 
     def _perturb_float(self, val, limit_min, limit_max):
             #NOTE: some hp value can't exceed reasonable range
