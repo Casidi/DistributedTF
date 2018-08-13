@@ -32,6 +32,8 @@ class MNISTDeepModel:
             self.writer.add_summary(result, self.train_step)
             self.train_step += 1
 
+            self.train_log.append((self.train_step, self.get_accuracy()))
+
     def perturb_hparams_and_update_graph(self):
         self.build_graph_from_hparams(is_first_call=False)
 

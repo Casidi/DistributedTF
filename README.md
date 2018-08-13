@@ -18,3 +18,4 @@ $ mpirun -host host1_ip,host2_ip --oversubscribe -n 5 python main_manager.py
 - [ ] Save/Restore check points
 - [ ] Load data
 - [ ] Add the MNIST model
+- [ ] Result visualization

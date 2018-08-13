@@ -6,7 +6,6 @@ import os
 import tensorflow as tf
 
 from pbt_cluster import PBTCluster
-from simple_net import SimpleNet
 from toy_model import ToyModel
 from mnist_deep_model import MNISTDeepModel
 from constants import WorkerInstruction
@@ -24,7 +23,7 @@ if rank == master_rank:
         os.mkdir('TensorBoard')
 
     #The PBT case
-    cluster = PBTCluster(5, comm, master_rank)
+    cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case(still dirty, needs to change the code around line 78 to make this work)
@@ -32,9 +31,10 @@ if rank == master_rank:
     #The grid search case
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
-    cluster.train(10)
+    cluster.train(100)
 
     #cluster.report_plot_for_toy_model()
+    cluster.report_accuracy_plot()
     cluster.kill_all_workers()
 else:
     worker_graphs = []
@@ -50,7 +50,6 @@ else:
 
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
-                #new_graph = SimpleNet(sess, i, hparam)
                 #new_graph = ToyModel(i, hparam)
                 new_graph = MNISTDeepModel(i, hparam)
                 worker_graphs.append(new_graph)
@@ -69,7 +68,6 @@ else:
             for v in vars_to_set:
                 for g in worker_graphs:
                     if g.cluster_id == v[0]:
-                        print '[{}]Updating graph {}'.format(rank, g.cluster_id)
                         g.set_values(v)
                         g.need_explore = True
         elif inst == WorkerInstruction.EXPLORE:

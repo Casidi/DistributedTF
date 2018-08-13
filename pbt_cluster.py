@@ -104,6 +104,7 @@ class PBTCluster:
             all_values[bottom_index][2] = all_values[top_index][2] #copy trainable variables
             all_values[bottom_index][3] = all_values[top_index][3] #copy hparams
             graphs_need_updating.append(bottom_index)
+            print 'Copied: {} -> {}'.format(top_index, bottom_index)
 
         #only update the bottom graphs
         worker_rank_to_graphs_need_updating = {}
@@ -155,6 +156,14 @@ class PBTCluster:
             out_file_name = 'grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
+
+    def report_accuracy_plot(self):
+        all_logs = self.get_all_training_log()
+        pyplot.xlabel(r'$\tTrain step$')
+        pyplot.ylabel(r'$\tAccuracy$')
+        for i in all_logs:
+            pyplot.plot(zip(*i)[0], zip(*i)[1])
+        pyplot.savefig('acc.png')
 
     def get_all_training_log(self):
         reqs = []
