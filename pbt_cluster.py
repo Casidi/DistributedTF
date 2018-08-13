@@ -159,11 +159,14 @@ class PBTCluster:
 
     def report_accuracy_plot(self):
         all_logs = self.get_all_training_log()
-        pyplot.xlabel(r'$\tTrain step$')
-        pyplot.ylabel(r'$\tAccuracy$')
+        pyplot.xlabel(r'Train step')
+        pyplot.ylabel(r'Accuracy')
         for i in all_logs:
             pyplot.plot(zip(*i)[0], zip(*i)[1])
-        pyplot.savefig('acc.png')
+
+        out_file_name = 'acc.png'
+        pyplot.savefig(out_file_name)
+        print 'Writing results to {}'.format(out_file_name)
 
     def get_all_training_log(self):
         reqs = []

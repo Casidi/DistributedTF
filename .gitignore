@@ -2,4 +2,3 @@ MNIST_data/
 TensorBoard/
 __pycache__/
 *.pyc
-*.png

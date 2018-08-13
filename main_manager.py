@@ -31,7 +31,7 @@ if rank == master_rank:
     #The grid search case
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
-    cluster.train(100)
+    cluster.train(30)
 
     #cluster.report_plot_for_toy_model()
     cluster.report_accuracy_plot()
