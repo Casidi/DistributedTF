@@ -32,11 +32,11 @@ class ToyModel:
         self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
         self.build_graph_from_hparams(is_first_call=False)
 
-    def get_loss(self):
-        return self.sess.run(self.fake_loss)
+    def get_accuracy(self):
+        return self.sess.run(self.obj)
 
     def get_values(self):
-        return [self.cluster_id, self.get_loss(), self.sess.run(self.trainable_vars), self.hparams]
+        return [self.cluster_id, self.get_accuracy(), self.sess.run(self.trainable_vars), self.hparams]
 
     def set_values(self, values):
         for i in range(len(self.trainable_vars)):
@@ -66,7 +66,6 @@ class ToyModel:
             self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
             self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
             self.loss = tf.square((self.obj - self.surrogate_obj))
-            self.fake_loss = tf.square(self.theta_0) + tf.square(self.theta_1)
 
             self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
             self.train_op = self.optimizer.minimize(self.loss)

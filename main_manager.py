@@ -8,6 +8,7 @@ import tensorflow as tf
 from pbt_cluster import PBTCluster
 from simple_net import SimpleNet
 from toy_model import ToyModel
+from mnist_deep_model import MNISTDeepModel
 from constants import WorkerInstruction
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -17,13 +18,13 @@ rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
     #The PBT case
-    #cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case(still dirty, needs to change the code around line 78 to make this work)
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
     #The grid search case
-    cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
     cluster.train(100)
 
@@ -50,7 +51,7 @@ else:
             num_steps = data[1]
             for g in worker_graphs:
                 g.train(num_steps)
-                print 'Graph {} step = {},  loss = {}'.format(g.cluster_id, g.train_step, g.get_loss())
+                print 'Graph {} step = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
         elif inst == WorkerInstruction.GET:
             vars_to_send = []
             for g in worker_graphs:

@@ -11,3 +11,10 @@ $ mpirun --oversubscribe -n 5 python main_manager.py
 ```shell=
 $ mpirun -host host1_ip,host2_ip --oversubscribe -n 5 python main_manager.py
 ```
+
+### TODOs
+- [ ] Automatic tests for PBTCluster and models
+- [ ] Handle the NaN error
+- [ ] Save/Restore check points
+- [ ] Load data
+- [ ] Add the MNIST model
