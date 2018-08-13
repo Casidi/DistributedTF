@@ -19,10 +19,8 @@ class PBTCluster:
         self.do_explore = do_explore
 
         self.build_all_graphs()
-        self.initialize_all_graphs()
 
     def build_all_graphs(self):
-        #load HPs and send to workers
         all_hparams_need_training = []
         hp_space = self.load_hp_space()
         for i in range(self.pop_size):         
@@ -43,14 +41,6 @@ class PBTCluster:
                 reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS, hparams_for_the_worker, begin), dest=i))
                 graphs_to_make -= graphs_per_worker
                 num_workers_sent += 1
-        for req in reqs:
-            req.wait()
-
-    def initialize_all_graphs(self):
-        reqs = []
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.INIT, ), dest=i))
         for req in reqs:
             req.wait()
 

@@ -1,9 +1,8 @@
 # mpirun --oversubscribe -n 5 python main_manager.py
-#docker run hongfr/mpi-with-ssh
+#docker run hongfr/mpi-tf
 
 from mpi4py import MPI
 import os
-import time
 import tensorflow as tf
 
 from pbt_cluster import PBTCluster
@@ -18,13 +17,13 @@ rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank)
+    #cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case(still dirty, needs to change the code around line 78 to make this work)
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
     #The grid search case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
+    cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
 
     cluster.train(100)
 
@@ -47,10 +46,6 @@ else:
                 #new_graph = SimpleNet(sess, i, hparam)
                 new_graph = ToyModel(i, hparam)
                 worker_graphs.append(new_graph)
-        elif inst == WorkerInstruction.INIT:
-            print('[{}]Initializing graphs'.format(rank))
-            for g in worker_graphs:
-                g.init_variables()
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
             for g in worker_graphs:

@@ -11,8 +11,6 @@ class ToyModel:
         self.perturb_factors = [0.8, 1.2]
         self.lr = 0.02
 
-        
-
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
             self.hparams['h_1'] = 1.0
@@ -22,9 +20,6 @@ class ToyModel:
 
         self.build_graph_from_hparams(is_first_call=True)
         self.train_log = []
-
-    def init_variables(self):
-        self.sess.run([var.initializer for var in self.trainable_vars])
 
     def train(self, num_steps):
         for i in range(num_steps):
@@ -37,8 +32,6 @@ class ToyModel:
         self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
         self.build_graph_from_hparams(is_first_call=False)
 
-    #the loss is not the same as the loss to compute the gradients
-    #this may be another bug of the paper
     def get_loss(self):
         return self.sess.run(self.fake_loss)
 
@@ -66,7 +59,6 @@ class ToyModel:
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.1
         self.sess = tf.Session(graph=self.tf_graph, config=config)
-
         
         with self.tf_graph.as_default():
             self.theta_0 = tf.Variable(0.9)
@@ -80,7 +72,7 @@ class ToyModel:
             self.train_op = self.optimizer.minimize(self.loss)
 
             self.trainable_vars = [self.theta_0, self.theta_1]
-        self.init_variables()
+        self.sess.run([var.initializer for var in self.trainable_vars])
 
         if not is_first_call:
             for i in range(len(self.trainable_vars)):
