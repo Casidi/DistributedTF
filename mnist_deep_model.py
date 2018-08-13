@@ -1,4 +1,7 @@
 import tensorflow as tf
+from mnist_dataset import get_train_batch, get_test_data
+import math
+import os
 
 class MNISTDeepModel:
     def __init__(self, cluster_id, hparams):
@@ -7,22 +10,53 @@ class MNISTDeepModel:
         self.train_step = 0
         self.need_explore = False
 
+        
         self.build_graph_from_hparams(is_first_call=True)
+        self.writer = tf.summary.FileWriter(os.path.join("TensorBoard", str(cluster_id)), graph = self.sess.graph)
         self.train_log = []
 
     def train(self, num_steps):
+        train_images, train_labels = get_train_batch(100)
         for i in range(num_steps):
-            self.train_log.append(self.sess.run(self.trainable_vars))
-            self.sess.run(self.train_op)
+            self.sess.run([self.train_op], 
+                        feed_dict={self.x: train_images,
+                         self.y_: train_labels, 
+                         self.is_training: True,
+                         self.keep_prob: self.hparams['dropout']})
+
+            result = self.sess.run(self.merged, 
+                        feed_dict={self.x: train_images,
+                         self.y_: train_labels, 
+                         self.is_training: False,
+                         self.keep_prob: self.hparams['dropout']})
+            self.writer.add_summary(result, self.train_step)
             self.train_step += 1
 
     def perturb_hparams_and_update_graph(self):
-        self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)
-        self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
         self.build_graph_from_hparams(is_first_call=False)
 
     def get_accuracy(self):
-        return self.sess.run(self.accuracy)
+        test_images, test_labels = get_test_data()
+        batch_size = 100
+        images_to_run = test_images.shape[0]
+        num_batches = 0
+        total_accuracy = 0.0
+        while images_to_run > 0:
+            begin = test_images.shape[0] - images_to_run
+            images_to_run -= 100
+            num_batches += 1
+            if begin+100 <= test_images.shape[0]:
+                images = test_images[begin:begin+100]
+                labels = test_labels[begin:begin+100]
+            else:
+                images = test_images[begin:]
+                labels = test_labels[begin:]
+            total_accuracy += self.sess.run(self.accuracy,
+                feed_dict={self.x: images,
+                        self.y_: labels, 
+                        self.is_training: False,
+                        self.keep_prob: self.hparams['dropout']})
+        return total_accuracy / num_batches
 
     def get_values(self):
         return [self.cluster_id, self.get_accuracy(), self.sess.run(self.trainable_vars), self.hparams]
@@ -54,17 +88,19 @@ class MNISTDeepModel:
             digits 0-9). keep_prob is a scalar placeholder for the probability of
             dropout.
             """
-            is_training = tf.placeholder(tf.bool, shape=())
-            
-            initializer = self.initializer_func(hparams)
-            
-            regularizer = self.regularizer_func(hparams)
+            self.x = tf.placeholder(tf.float32, shape=(None, 28*28))
+            self.y_ = tf.placeholder(tf.int32, [None])
+            one_hot_y_ = tf.one_hot(self.y_, 10)
+
+            self.is_training = tf.placeholder(tf.bool, shape=())            
+            initializer = self.initializer_func(self.hparams)            
+            regularizer = self.regularizer_func(self.hparams)
             
             # Reshape to use within a convolutional neural net.
             # Last dimension is for "features" - there is only one here, since images are
             # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
             with tf.name_scope('reshape'):
-                x_image = tf.reshape(x, [-1, 28, 28, 1])
+                x_image = tf.reshape(self.x, [-1, 28, 28, 1])
             
             # First convolutional layer - maps one grayscale image to 32 feature maps.
             with tf.name_scope('conv1'):
@@ -77,9 +113,9 @@ class MNISTDeepModel:
                         activation=None,
                         kernel_regularizer=regularizer,
                         name='conv1')
-                net = tf.layers.batch_normalization(
+                '''net = tf.layers.batch_normalization(
                         net, 
-                        training = is_training)
+                        training = self.is_training)'''
                 net = tf.nn.relu(net)
             with tf.name_scope('pool1'):
                 net = tf.layers.max_pooling2d(
@@ -99,9 +135,9 @@ class MNISTDeepModel:
                         activation=None,
                         kernel_regularizer=regularizer,
                         name='conv2')
-                net = tf.layers.batch_normalization(
+                '''net = tf.layers.batch_normalization(
                         net, 
-                        training = is_training)
+                        training = self.is_training)'''
                 net = tf.nn.relu(net)
             # Second pooling layer.
             with tf.name_scope('pool2'):
@@ -126,9 +162,8 @@ class MNISTDeepModel:
             # Dropout - controls the complexity of the model, prevents co-adaptation of
             # features.
             with tf.name_scope('dropout'):
-                keep_prob = tf.placeholder(tf.float32)
-                net = tf.layers.dropout(net, rate=keep_prob, training=is_training)
-                
+                self.keep_prob = tf.placeholder(tf.float32)
+                net = tf.layers.dropout(net, rate=self.keep_prob, training=self.is_training)                
             
             # Map the 1024 features to 10 classes, one for each digit
             with tf.name_scope('fc2'):
@@ -139,16 +174,20 @@ class MNISTDeepModel:
                         kernel_regularizer=regularizer,
                         name='logits')
 
+            self.loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y_, logits=y_conv))
+            tf.summary.scalar('loss', self.loss)
 
-            self.loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(labels=next_element[1], logits=logits))
-
-            self.train_op, learning_rate = self.solver_func(self.hparams, self.loss, epochs)
-            prediction = tf.argmax(logits, 1)
-            equality = tf.equal(prediction, tf.argmax(next_element[1], 1))
+            self.train_op, learning_rate = self.solver_func(self.hparams, self.loss, 10)
+            prediction = tf.argmax(y_conv, 1)
+            equality = tf.equal(prediction, tf.argmax(one_hot_y_, 1))
             self.accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))
+            tf.summary.scalar('acc', self.accuracy)
+
+            self.merged = tf.summary.merge_all()            
 
             self.trainable_vars = tf.trainable_variables()
-        self.sess.run([var.initializer for var in self.trainable_vars])
+            self.init_op = tf.global_variables_initializer()
+        self.sess.run(self.init_op)
 
         if not is_first_call:
             for i in range(len(self.trainable_vars)):
@@ -181,13 +220,11 @@ class MNISTDeepModel:
             regularizer = None
         return regularizer
 
-    def solver_func(hparams, loss, training_iter):
-        global_step = tf.train.get_or_create_global_step()
-            
+    def solver_func(self, hparams, loss, training_iter):
         starting_lr = hparams['opt_case']['lr']
-        decay_steps = int(ceil(training_iter * hparams['decay_steps'] / 100.0))
+        decay_steps = int(math.ceil(training_iter * hparams['decay_steps'] / 100.0))
         # Decay lr at every 40 steps with a base of 0.96
-        learning_rate = tf.train.exponential_decay(starting_lr, global_step, \
+        learning_rate = tf.train.exponential_decay(starting_lr, self.train_step, \
                         decay_steps, hparams['decay_rate'], staircase=True)
         
         # The variable training and update_ops are necessary for batch normalization
@@ -199,30 +236,30 @@ class MNISTDeepModel:
             if hparams['opt_case']['optimizer']=='Adadelta':
                 train_op = tf.train.AdadeltaOptimizer( \
                     learning_rate=learning_rate \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             elif hparams['opt_case']['optimizer']=='Adagrad':
                 train_op = tf.train.AdagradOptimizer( \
                     learning_rate=learning_rate \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             elif hparams['opt_case']['optimizer']=='Momentum':
                 train_op = tf.train.MomentumOptimizer( \
                     learning_rate=learning_rate, \
                     momentum = hparams['opt_case']['momentum'] \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             elif hparams['opt_case']['optimizer']=='Adam':
                 train_op = tf.train.AdamOptimizer( \
                     learning_rate=learning_rate \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             elif hparams['opt_case']['optimizer']=='RMSProp':
                 train_op = tf.train.RMSPropOptimizer( \
                     learning_rate=learning_rate, \
                     momentum = hparams['opt_case']['momentum'], \
                     decay = hparams['opt_case']['grad_decay'] \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             elif hparams['opt_case']['optimizer']=='gd':
                 train_op = tf.train.GradientDescentOptimizer( \
                     learning_rate=learning_rate \
-                    ).minimize(loss, global_step=global_step, name="train_op")
+                    ).minimize(loss, name="train_op")
             else:
                 raise RuntimeError('Hyper-parameter optimizer is wrong!')
             
