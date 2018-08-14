@@ -7,10 +7,12 @@ import math
 import tensorflow as tf
 
 from pbt_cluster import PBTCluster
-from toy_model import ToyModel
-from mnist_deep_model import MNISTDeepModel
 from constants import WorkerInstruction
 
+#TODO: switch models using import as
+from toy_model import ToyModel
+from mnist_deep_model import MNISTDeepModel
+from mnist_single_layer_model import MNISTSingleLayerModel
 from mnist_dataset import load_dataset
 load_dataset()
 
@@ -50,8 +52,9 @@ else:
 
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
-                new_graph = ToyModel(i, hparam)
-                #new_graph = MNISTDeepModel(i, hparam)
+                #new_graph = ToyModel(i, hparam)
+                new_graph = MNISTDeepModel(i, hparam)
+                #new_graph = MNISTSingleLayerModel(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
