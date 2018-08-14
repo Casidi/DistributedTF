@@ -73,7 +73,7 @@ class PBTCluster:
                 req.wait()
 
             until_step_num -= self.steps_per_round
-            if until_step_num < 1: # No need to do exploit & explore in the least time.
+            if until_step_num < 1: # No need to do exploit & explore for the last round.
                 return
             round += 1
 
