@@ -58,6 +58,9 @@ else:
             for g in worker_graphs:
                 g.train(num_steps)
                 print 'Graph {} step = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
+                if math.isnan(g.get_accuracy()) == True:
+                    print '[WARNING] The calculated accuracy of the graph is Nan, the program will pass the graph.'
+                    continue
         elif inst == WorkerInstruction.GET:
             vars_to_send = []
             for g in worker_graphs:
