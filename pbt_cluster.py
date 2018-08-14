@@ -157,12 +157,16 @@ class PBTCluster:
         #pyplot.show()
 
         if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
             out_file_name = 'PBT.png'
         elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
             out_file_name = 'exploit_only.png'
         elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
             out_file_name = 'explore_only.png'
         else:
+            pyplot.title('Grid search')
             out_file_name = 'grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
@@ -185,12 +189,16 @@ class PBTCluster:
         pyplot.grid(True)        
 
         if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
             out_file_name = 'acc_PBT.png'
         elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
             out_file_name = 'acc_exploit_only.png'
         elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
             out_file_name = 'acc_explore_only.png'
         else:
+            pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
