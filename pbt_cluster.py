@@ -5,6 +5,7 @@ import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
 from matplotlib import pyplot
+import matplotlib.ticker as ticker
 import numpy as np
 
 from constants import WorkerInstruction
@@ -17,6 +18,7 @@ class PBTCluster:
         self.master_rank = master_rank
         self.do_exploit = do_exploit
         self.do_explore = do_explore
+        self.steps_per_round = 4
 
         self.build_all_graphs()
 
@@ -56,7 +58,7 @@ class PBTCluster:
         round = 0
         while until_step_num > 0:
             print '\nRound {}'.format(round)
-            steps_to_train = min(4, until_step_num)
+            steps_to_train = min(self.steps_per_round, until_step_num)
 
             reqs = []
             for i in range(0, self.comm.Get_size()):
@@ -65,7 +67,7 @@ class PBTCluster:
             for req in reqs:
                 req.wait()
 
-            until_step_num -= 4
+            until_step_num -= self.steps_per_round
             round += 1
 
             if self.do_exploit:
@@ -159,12 +161,29 @@ class PBTCluster:
 
     def report_accuracy_plot(self):
         all_logs = self.get_all_training_log()
+        if len(all_logs) == 0:
+            print 'Error: No train logs'
+            return
+
+        fig, ax = pyplot.subplots()
+        for i in all_logs:
+            ax.plot(zip(*i)[0], zip(*i)[1])
+
+        start, end = ax.get_xlim()
+        ax.xaxis.set_ticks(np.arange(0.0, end, 4))
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
         pyplot.xlabel(r'Train step')
         pyplot.ylabel(r'Accuracy')
-        for i in all_logs:
-            pyplot.plot(zip(*i)[0], zip(*i)[1])
+        pyplot.grid(True)        
 
-        out_file_name = 'acc.png'
+        if self.do_exploit and self.do_explore:
+            out_file_name = 'acc_PBT.png'
+        elif self.do_exploit and not self.do_explore:
+            out_file_name = 'acc_exploit_only.png'
+        elif not self.do_exploit and self.do_explore:
+            out_file_name = 'acc_explore_only.png'
+        else:
+            out_file_name = 'acc_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
 

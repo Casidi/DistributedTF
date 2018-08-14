@@ -18,6 +18,7 @@ class MNISTDeepModel:
     def train(self, num_steps):
         train_images, train_labels = get_train_batch(100)
         for i in range(num_steps):
+            self.train_log.append((self.train_step, self.get_accuracy()))
             self.sess.run([self.train_op], 
                         feed_dict={self.x: train_images,
                          self.y_: train_labels, 
@@ -29,10 +30,8 @@ class MNISTDeepModel:
                          self.y_: train_labels, 
                          self.is_training: False,
                          self.keep_prob: self.hparams['dropout']})
-            self.writer.add_summary(result, self.train_step)
-            self.train_step += 1
-
-            self.train_log.append((self.train_step, self.get_accuracy()))
+            self.writer.add_summary(result, self.train_step)            
+            self.train_step += 1            
 
     def perturb_hparams_and_update_graph(self):
         self.build_graph_from_hparams(is_first_call=False)
