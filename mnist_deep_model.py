@@ -1,7 +1,6 @@
 import tensorflow as tf
 from mnist_dataset import get_train_batch, get_test_data
 import math
-import os
 
 class MNISTDeepModel:
     def __init__(self, cluster_id, hparams):
@@ -10,9 +9,7 @@ class MNISTDeepModel:
         self.train_step = 0
         self.need_explore = False
 
-        
-        self.build_graph_from_hparams(is_first_call=True)
-        self.writer = tf.summary.FileWriter(os.path.join("TensorBoard", str(cluster_id)), graph = self.sess.graph)
+        self.build_graph_from_hparams()
         self.train_log = []
 
     def train(self, num_steps):
@@ -23,18 +20,12 @@ class MNISTDeepModel:
                         feed_dict={self.x: train_images,
                          self.y_: train_labels, 
                          self.is_training: True,
-                         self.keep_prob: self.hparams['dropout']})
-
-            result = self.sess.run(self.merged, 
-                        feed_dict={self.x: train_images,
-                         self.y_: train_labels, 
-                         self.is_training: False,
-                         self.keep_prob: self.hparams['dropout']})
-            self.writer.add_summary(result, self.train_step)            
+                         self.keep_prob: self.hparams['dropout']})            
             self.train_step += 1            
 
     def perturb_hparams_and_update_graph(self):
-        self.build_graph_from_hparams(is_first_call=False)
+        #self.build_graph_from_hparams(is_first_call=False)
+        return
 
     def get_accuracy(self):
         test_images, test_labels = get_test_data()
@@ -63,16 +54,13 @@ class MNISTDeepModel:
         return [self.cluster_id, self.get_accuracy(), self.sess.run(self.trainable_vars), self.hparams]
 
     def set_values(self, values):
+        self.hparams = values[3]
+        self.build_graph_from_hparams()
+
         for i in range(len(self.trainable_vars)):
             self.trainable_vars[i].load(values[2][i], self.sess)
-        
-        self.hparams = values[3]
-        self.build_graph_from_hparams(is_first_call=False)
     
-    def build_graph_from_hparams(self, is_first_call):
-        if not is_first_call:
-            old_values = self.sess.run(self.trainable_vars)
-
+    def build_graph_from_hparams(self):
         self.tf_graph = tf.Graph()
         config = tf.ConfigProto()
         config.gpu_options.per_process_gpu_memory_fraction = 0.1
@@ -176,23 +164,15 @@ class MNISTDeepModel:
                         name='logits')
 
             self.loss = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(labels=one_hot_y_, logits=y_conv))
-            tf.summary.scalar('loss', self.loss)
 
             self.train_op, learning_rate = self.solver_func(self.hparams, self.loss, 10)
             prediction = tf.argmax(y_conv, 1)
             equality = tf.equal(prediction, tf.argmax(one_hot_y_, 1))
-            self.accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))
-            tf.summary.scalar('acc', self.accuracy)
-
-            self.merged = tf.summary.merge_all()            
+            self.accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))         
 
             self.trainable_vars = tf.trainable_variables()
             self.init_op = tf.global_variables_initializer()
         self.sess.run(self.init_op)
-
-        if not is_first_call:
-            for i in range(len(self.trainable_vars)):
-                self.trainable_vars[i].load(old_values[i], self.sess)
 
     def initializer_func(self, hparams):
         # Ref: https://becominghuman.ai/priming-neural-networks-with-an-appropriate-initializer-7b163990ead

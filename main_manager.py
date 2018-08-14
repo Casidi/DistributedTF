@@ -20,9 +20,6 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
-    if not os.path.isdir('TensorBoard'):
-        os.mkdir('TensorBoard')
-
     #The PBT case
     cluster = PBTCluster(10, comm, master_rank)
     #The exploit only case
