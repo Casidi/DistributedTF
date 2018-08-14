@@ -106,7 +106,7 @@ class PBTCluster:
             all_values[bottom_index][2] = all_values[top_index][2] #copy trainable variables
             all_values[bottom_index][3] = all_values[top_index][3] #copy hparams
             graphs_need_updating.append(bottom_index)
-            print 'Copied: {} -> {}'.format(top_index, bottom_index)
+            print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
 
         #only update the bottom graphs
         worker_rank_to_graphs_need_updating = {}
