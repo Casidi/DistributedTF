@@ -2,8 +2,7 @@ import math
 
 import hyperopt.pyll.stochastic
 import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # Force matplotlib to not use any Xwindows backend.
 from matplotlib import pyplot
 import matplotlib.ticker as ticker
 import numpy as np
@@ -25,7 +24,7 @@ class PBTCluster:
     def build_all_graphs(self):
         all_hparams_need_training = []
         hp_space = load_hp_space()
-        for i in range(self.pop_size):         
+        for i in range(self.pop_size):
             hparams = hyperopt.pyll.stochastic.sample(hp_space)
             all_hparams_need_training.append(hparams)
 
@@ -45,8 +44,8 @@ class PBTCluster:
                 begin = num_workers_sent * graphs_per_worker
                 end = min(graphs_per_worker, graphs_to_make) + begin
                 hparams_for_the_worker = all_hparams_need_training[begin: end]
-                reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS, 
-                            hparams_for_the_worker, begin, is_explore_only), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS,
+                                             hparams_for_the_worker, begin, is_explore_only), dest=i))
                 graphs_to_make -= graphs_per_worker
                 num_workers_sent += 1
         for req in reqs:
@@ -56,7 +55,7 @@ class PBTCluster:
         reqs = []
         for i in range(0, self.comm.Get_size()):
             if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.EXIT, ), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.EXIT,), dest=i))
         for req in reqs:
             req.wait()
 
@@ -74,6 +73,8 @@ class PBTCluster:
                 req.wait()
 
             until_step_num -= self.steps_per_round
+            if until_step_num < 1: # No need to do exploit & explore in the least time.
+                return
             round += 1
 
             if self.do_exploit:
@@ -85,7 +86,7 @@ class PBTCluster:
         reqs = []
         for i in range(0, self.comm.Get_size()):
             if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.GET, ), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.GET,), dest=i))
         for req in reqs:
             req.wait()
 
@@ -108,15 +109,15 @@ class PBTCluster:
         graphs_need_updating = []
         for i in range(num_graphs_to_copy):
             bottom_index = i
-            #top_index = len(all_values) - num_graphs_to_copy + i
+            # top_index = len(all_values) - num_graphs_to_copy + i
             top_index = len(all_values) - 1
-            all_values[bottom_index][1] = all_values[top_index][1] #copy loss, not necessary
-            all_values[bottom_index][2] = all_values[top_index][2] #copy trainable variables
-            all_values[bottom_index][3] = all_values[top_index][3] #copy hparams
+            all_values[bottom_index][1] = all_values[top_index][1]  # copy loss, not necessary
+            all_values[bottom_index][2] = all_values[top_index][2]  # copy trainable variables
+            all_values[bottom_index][3] = all_values[top_index][3]  # copy hparams
             graphs_need_updating.append(bottom_index)
             print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
 
-        #only update the bottom graphs
+        # only update the bottom graphs
         worker_rank_to_graphs_need_updating = {}
         for i in range(self.comm.Get_size()):
             worker_rank_to_graphs_need_updating[i] = []
@@ -134,7 +135,7 @@ class PBTCluster:
         reqs = []
         for i in range(self.comm.Get_size()):
             if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.EXPLORE, ), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.EXPLORE,), dest=i))
         for req in reqs:
             req.wait()
 
@@ -145,28 +146,24 @@ class PBTCluster:
         linspace_y = np.linspace(start=0, stop=1, num=100)
         x, y = np.meshgrid(linspace_x, linspace_y)
         z = 1.2 - (x ** 2 + y ** 2)
-        
+
         pyplot.xlabel(r'$\theta_0$')
         pyplot.ylabel(r'$\theta_1$')
         pyplot.xlim(0, 1)
         pyplot.ylim(0, 1)
-        
+
         pyplot.plot(zip(*training_log[0])[0], zip(*training_log[0])[1], '.', color='black')
         pyplot.plot(zip(*training_log[1])[0], zip(*training_log[1])[1], '.', color='red')
         pyplot.contour(x, y, z, colors='lightgray')
-        #pyplot.show()
+        # pyplot.show()
 
         if self.do_exploit and self.do_explore:
-            pyplot.title('PBT')
             out_file_name = 'PBT.png'
         elif self.do_exploit and not self.do_explore:
-            pyplot.title('Exploit only')
             out_file_name = 'exploit_only.png'
         elif not self.do_exploit and self.do_explore:
-            pyplot.title('Explore only')
             out_file_name = 'explore_only.png'
         else:
-            pyplot.title('Grid search')
             out_file_name = 'grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
@@ -186,19 +183,15 @@ class PBTCluster:
         ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
         pyplot.xlabel(r'Train step')
         pyplot.ylabel(r'Accuracy')
-        pyplot.grid(True)        
+        pyplot.grid(True)
 
         if self.do_exploit and self.do_explore:
-            pyplot.title('PBT')
             out_file_name = 'acc_PBT.png'
         elif self.do_exploit and not self.do_explore:
-            pyplot.title('Exploit only')
             out_file_name = 'acc_exploit_only.png'
         elif not self.do_exploit and self.do_explore:
-            pyplot.title('Explore only')
             out_file_name = 'acc_explore_only.png'
         else:
-            pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
@@ -207,7 +200,7 @@ class PBTCluster:
         reqs = []
         for i in range(0, self.comm.Get_size()):
             if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.GET_TRAIN_LOG, ), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.GET_TRAIN_LOG,), dest=i))
         for req in reqs:
             req.wait()
 
