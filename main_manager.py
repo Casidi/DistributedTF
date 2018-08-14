@@ -3,6 +3,7 @@
 
 from mpi4py import MPI
 import os
+import math
 import tensorflow as tf
 
 from pbt_cluster import PBTCluster
@@ -23,13 +24,13 @@ if rank == master_rank:
         os.mkdir('TensorBoard')
 
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(10, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case(still dirty, needs to change the code around line 78 to make this work)
     #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
     #The grid search case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
+    #cluster = PBTCluster(10, comm, master_rank, do_exploit=False, do_explore=False)
 
     cluster.train(30)
 
