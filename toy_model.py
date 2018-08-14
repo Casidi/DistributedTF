@@ -16,8 +16,9 @@ class ToyModel:
             self.hparams['h_1'] = 1.0
         else:
             self.hparams['h_0'] = 1.0
-            self.hparams['h_1'] = 0.0
-            # self.hparams['h_1'] = float('nan')  # Use for testing function of Nan error detection
+            #self.hparams['h_1'] = 0.0
+            self.hparams['h_1'] = float('nan')  # Use for testing NaN error handling
+
         self.build_graph_from_hparams(is_first_call=True)
         self.train_log = []
 

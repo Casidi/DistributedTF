@@ -58,12 +58,12 @@ else:
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
-            for g in worker_graphs:
+            for g in worker_graphs[:]:  # Take a copy of the list and then iterate over it, or the iteration will fail with unexpected results.
                 g.train(num_steps)
                 print 'Graph {} step = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
                 if math.isnan(g.get_accuracy()) == True:
-                    print '[WARNING] The calculated accuracy of the graph is Nan, the program will pass the graph.'
-                    continue
+                    worker_graphs.remove(g)
+                    print '[WARNING] The calculated accuracy of the graph is NaN, the program has removed the graph.'
         elif inst == WorkerInstruction.GET:
             vars_to_send = []
             for g in worker_graphs:
