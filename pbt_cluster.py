@@ -97,7 +97,7 @@ class PBTCluster:
         '''print 'The ranking before exploit'
         for i in all_values:
             print 'graph {}, loss={}'.format(i[0], i[1])'''
-        num_graphs_to_copy = math.ceil(float(self.pop_size) / 4.0)
+        num_graphs_to_copy = math.ceil(len(all_values) / 4.0)
         graphs_need_updating = []
         for i in range(num_graphs_to_copy):
             bottom_index = i
