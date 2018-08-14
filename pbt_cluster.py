@@ -33,6 +33,11 @@ class PBTCluster:
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
         graphs_to_make = len(all_hparams_need_training)
 
+        if self.do_explore and not self.do_exploit:
+            is_explore_only = True
+        else:
+            is_explore_only = False
+
         reqs = []
         num_workers_sent = 0
         for i in range(0, self.comm.Get_size()):
@@ -40,7 +45,8 @@ class PBTCluster:
                 begin = num_workers_sent * graphs_per_worker
                 end = min(graphs_per_worker, graphs_to_make) + begin
                 hparams_for_the_worker = all_hparams_need_training[begin: end]
-                reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS, hparams_for_the_worker, begin), dest=i))
+                reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS, 
+                            hparams_for_the_worker, begin, is_explore_only), dest=i))
                 graphs_to_make -= graphs_per_worker
                 num_workers_sent += 1
         for req in reqs:
@@ -94,6 +100,7 @@ class PBTCluster:
 
         # copy top 25% to bottom 25%
         all_values = sorted(all_values, key=lambda value: value[1])
+        self.pop_size = len(all_values)
         '''print 'The ranking before exploit'
         for i in all_values:
             print 'graph {}, loss={}'.format(i[0], i[1])'''

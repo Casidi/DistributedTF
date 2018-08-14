@@ -23,9 +23,9 @@ if rank == master_rank:
     #The PBT case
     cluster = PBTCluster(10, comm, master_rank)
     #The exploit only case
-    #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
-    #The explore only case(still dirty, needs to change the code around line 78 to make this work)
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
+    #cluster = PBTCluster(10, comm, master_rank, do_explore=False)
+    #The explore only case
+    #cluster = PBTCluster(10, comm, master_rank, do_exploit=False)
     #The grid search case
     #cluster = PBTCluster(10, comm, master_rank, do_exploit=False, do_explore=False)
 
@@ -36,6 +36,7 @@ if rank == master_rank:
     cluster.kill_all_workers()
 else:
     worker_graphs = []
+    is_expolore_only = False
 
     while True:
         data = comm.recv(source=master_rank)
@@ -43,6 +44,7 @@ else:
         if inst == WorkerInstruction.ADD_GRAPHS:
             hparam_list = data[1]
             cluster_id_begin = data[2]
+            is_expolore_only = data[3]
             cluster_id_end = cluster_id_begin + len(hparam_list)
             print('[{}]Got {} hparams'.format(rank, len(hparam_list)))
 
@@ -73,8 +75,7 @@ else:
                         g.need_explore = True
         elif inst == WorkerInstruction.EXPLORE:
             for g in worker_graphs:
-                #g.need_explore = True # dirty fix to generate the explore only graph
-                if g.need_explore:
+                if g.need_explore or is_expolore_only:
                     print '[{}]Exploring graph {}'.format(rank, g.cluster_id)
                     g.perturb_hparams_and_update_graph()
                     g.need_explore = False
