@@ -1,4 +1,5 @@
 import math
+import shutil
 
 import hyperopt.pyll.stochastic
 import matplotlib
@@ -17,7 +18,7 @@ class PBTCluster:
         self.master_rank = master_rank
         self.do_exploit = do_exploit
         self.do_explore = do_explore
-        self.steps_per_round = 4
+        self.epochs_per_round = 1
 
         self.build_all_graphs()
 
@@ -59,11 +60,11 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
-    def train(self, until_step_num):
+    def train(self, until_epoch_num):
         round = 0
-        while until_step_num > 0:
+        while until_epoch_num > 0:
             print '\nRound {}'.format(round)
-            steps_to_train = min(self.steps_per_round, until_step_num)
+            steps_to_train = min(self.epochs_per_round, until_epoch_num)
 
             reqs = []
             for i in range(0, self.comm.Get_size()):
@@ -72,8 +73,8 @@ class PBTCluster:
             for req in reqs:
                 req.wait()
 
-            until_step_num -= self.steps_per_round
-            if until_step_num < 1: # No need to do exploit & explore for the last round.
+            until_epoch_num -= self.epochs_per_round
+            if until_epoch_num < 1: # No need to do exploit & explore for the last round.
                 return
             round += 1
 
@@ -111,9 +112,15 @@ class PBTCluster:
             bottom_index = i
             top_index = len(all_values) - num_graphs_to_copy + i
             # top_index = len(all_values) - 1 #for debug
-            all_values[bottom_index][1] = all_values[top_index][1]  # copy loss, not necessary
-            all_values[bottom_index][2] = all_values[top_index][2]  # copy trainable variables
-            all_values[bottom_index][3] = all_values[top_index][3]  # copy hparams
+            all_values[bottom_index][1] = all_values[top_index][1]  # copy accuracy, not necessary
+            all_values[bottom_index][2] = all_values[top_index][2]  # copy hparams
+
+            # TODO: change the hard coded path to work with another models
+            source_dir = './resnet/model_' + all_values[top_index][0]
+            destination_dir = './resnet/model_' + all_values[bottom_index][0]
+            shutil.rmtree(destination_dir)
+            shutil.copytree(source_dir, destination_dir)
+
             graphs_need_updating.append(bottom_index)
             print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
 

@@ -10,9 +10,9 @@ from pbt_cluster import PBTCluster
 from constants import WorkerInstruction
 
 #TODO: switch models using import as
+from cifar10_model import Cifar10Model
 from toy_model import ToyModel
 from mnist_deep_model import MNISTDeepModel
-from mnist_single_layer_model import MNISTSingleLayerModel
 from mnist_dataset import load_dataset
 load_dataset()
 
@@ -23,7 +23,7 @@ rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
     #The PBT case
-    cluster = PBTCluster(10, comm, master_rank)
+    cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(10, comm, master_rank, do_explore=False)
     #The explore only case
@@ -31,10 +31,13 @@ if rank == master_rank:
     #The grid search case
     #cluster = PBTCluster(10, comm, master_rank, do_exploit=False, do_explore=False)
 
-    cluster.train(30)
+    cluster.train(3)
 
     #cluster.report_plot_for_toy_model()
-    cluster.report_accuracy_plot()
+
+    #TODO: modify report_accuracy_plot to read data from csv
+    #cluster.report_accuracy_plot()
+
     cluster.kill_all_workers()
 else:
     worker_graphs = []
@@ -53,13 +56,13 @@ else:
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
                 #new_graph = ToyModel(i, hparam)
-                new_graph = MNISTDeepModel(i, hparam)
-                #new_graph = MNISTSingleLayerModel(i, hparam)
+                #new_graph = MNISTDeepModel(i, hparam)
+                new_graph = Cifar10Model(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
             for g in worker_graphs[:]:  # Take a copy of the list and then iterate over it, or the iteration will fail with unexpected results.
-                g.train(num_steps)
+                g.train()
                 print 'Graph {} step = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
                 if math.isnan(g.get_accuracy()) == True:
                     worker_graphs.remove(g)

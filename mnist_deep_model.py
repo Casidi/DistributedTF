@@ -25,7 +25,7 @@ class MNISTDeepModel:
 
     def perturb_hparams_and_update_graph(self):
         #TODO: implement this function to get the exploring working
-        self.build_graph_from_hparams(is_first_call=False)
+        self.build_graph_from_hparams()
         return
 
     def get_accuracy(self):
