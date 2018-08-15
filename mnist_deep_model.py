@@ -25,7 +25,7 @@ class MNISTDeepModel:
 
     def perturb_hparams_and_update_graph(self):
         #TODO: implement this function to get the exploring working
-        #self.build_graph_from_hparams(is_first_call=False)
+        self.build_graph_from_hparams(is_first_call=False)
         return
 
     def get_accuracy(self):
@@ -64,19 +64,14 @@ class MNISTDeepModel:
     def build_graph_from_hparams(self):
         self.tf_graph = tf.Graph()
         config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.1
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.1
+        config.gpu_options.allow_growth = True
         self.sess = tf.Session(graph=self.tf_graph, config=config)
         
         with self.tf_graph.as_default():
-            """deepnn builds the graph for a deep net for classifying digits.
-            Args:
+            """
             x: an input tensor with the dimensions (N_examples, 784), where 784 is the
             number of pixels in a standard MNIST image.
-            Returns:
-            A tuple (y, keep_prob). y is a tensor of shape (N_examples, 10), with values
-            equal to the logits of classifying the digit into one of 10 classes (the
-            digits 0-9). keep_prob is a scalar placeholder for the probability of
-            dropout.
             """
             self.x = tf.placeholder(tf.float32, shape=(None, 28*28))
             self.y_ = tf.placeholder(tf.int32, [None])
