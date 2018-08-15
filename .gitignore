@@ -1,4 +1,4 @@
 MNIST_data/
-TensorBoard/
+resnet/model_*
 __pycache__/
 *.pyc

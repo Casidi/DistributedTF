@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mpi
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mpi
+  template:
+    metadata:
+      labels:
+        app: mpi
+    spec:
+      containers:
+      - image: hongfr/mpi-tf:gpu
+        name: mpi
+        volumeMounts:
+        - name: hostpath-volume
+          mountPath: /DistributedTF
+        - name: dataset-volume
+          mountPath: /home/K8S/dataset
+      volumes:
+      - name: hostpath-volume
+        hostPath:
+          path: /home/K8S/tcfsh/DistributedTF
+      - name: dataset-volume
+        hostPath:
+          path: /home/K8S/dataset

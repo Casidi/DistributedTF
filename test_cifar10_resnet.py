@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, './resnet')
 
+#NOTE: tensorflow >= 1.10 required
 from resnet import cifar10_main
 
 hp = {
@@ -13,8 +14,8 @@ hp = {
     'batch_size': 128}
 
 model_id = 0
-save_base_dir = './model_'
-data_dir = '/home/icls456251/Desktop/cifar10'
+save_base_dir = './resnet/model_'
+data_dir = '/home/K8S/dataset/cifar10'
 train_epochs = 1
 
 eval_accuracy, model_id = \
