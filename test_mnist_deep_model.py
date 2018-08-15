@@ -31,8 +31,10 @@ class ToyModelTestCase(unittest.TestCase):
         # All the values of the two models should be the same except the cluster_id
         self.assertEqual(model1.get_accuracy(), model2.get_accuracy())
         self.assertEqual(np.asarray(model1.get_values()[2]).shape, np.asarray(model2.get_values()[2]).shape)
-        self.assertTrue(np.array_equal(np.asarray(model1.get_values()[2]), np.asarray(model2.get_values()[2])))
-        self.assertEqual(model1.get_values()[3], model2.get_values()[3])
+        self.assertTrue(np.array_equal(np.asarray(model1.get_values()[2]), np.asarray(model2.get_values()[2])),
+                            msg='The weights should be the same!!')
+        self.assertEqual(model1.get_values()[3], model2.get_values()[3],
+                            msg='The hyper parameters should be the same!!')
         self.assertNotEqual(model1.cluster_id, model2.cluster_id)
         
 load_dataset()
