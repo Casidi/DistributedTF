@@ -109,8 +109,8 @@ class PBTCluster:
         graphs_need_updating = []
         for i in range(num_graphs_to_copy):
             bottom_index = i
-            # top_index = len(all_values) - num_graphs_to_copy + i
-            top_index = len(all_values) - 1
+            top_index = len(all_values) - num_graphs_to_copy + i
+            # top_index = len(all_values) - 1 #for debug
             all_values[bottom_index][1] = all_values[top_index][1]  # copy loss, not necessary
             all_values[bottom_index][2] = all_values[top_index][2]  # copy trainable variables
             all_values[bottom_index][3] = all_values[top_index][3]  # copy hparams
