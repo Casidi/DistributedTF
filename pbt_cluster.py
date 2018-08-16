@@ -1,5 +1,6 @@
 import math
 import shutil
+import subprocess
 
 import hyperopt.pyll.stochastic
 import matplotlib
@@ -118,8 +119,8 @@ class PBTCluster:
             # TODO: change the hard coded path to work with another models
             source_dir = './resnet/model_' + str(all_values[top_index][0])
             destination_dir = './resnet/model_' + str(all_values[bottom_index][0])
-            shutil.rmtree(destination_dir)
-            shutil.copytree(source_dir, destination_dir)
+            #shutil.rmtree(destination_dir)
+            #shutil.copytree(source_dir, destination_dir)
 
             graphs_need_updating.append(bottom_index)
             print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
@@ -138,6 +139,20 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
+    def copyfiles(self, src_dir, dest_dir):
+        #subprocess.call(['rm', '-rf', dest_dir])
+        #subprocess.call(['cp', '-r', src_dir, dest_dir])
+        
+        for i in os.listdir(dest_dir):
+            path = os.path.join(dest_dir, i)
+            if not os.path.isdir(path) and i != 'learning_curve.csv':
+                subprocess.call(['rm', '-f', path])
+        for i in os.listdir(src_dir):
+            path = os.path.join(src_dir, i)
+            if not os.path.isdir(path) and i != 'learning_curve.csv':
+                subprocess.call(['cp', path, dest_dir])
+        
+
     def explore(self):
         reqs = []
         for i in range(self.comm.Get_size()):
@@ -145,6 +160,18 @@ class PBTCluster:
                 reqs.append(self.comm.isend((WorkerInstruction.EXPLORE,), dest=i))
         for req in reqs:
             req.wait()
+
+    def flush_all_instructions(self):
+        reqs = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                reqs.append(self.comm.isend((WorkerInstruction.GET,), dest=i))
+        for req in reqs:
+            req.wait()
+
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                data = self.comm.recv(source=i)
 
     def report_plot_for_toy_model(self):
         training_log = self.get_all_training_log()

@@ -42,4 +42,4 @@ class Cifar10Model:
         return [self.cluster_id, self.get_accuracy(), self.hparams]
 
     def set_values(self, values):
-        self.hparams = values[3]
+        self.hparams = values[2]

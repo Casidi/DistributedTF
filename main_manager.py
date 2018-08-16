@@ -4,6 +4,8 @@
 from mpi4py import MPI
 import os
 import math
+import time
+import datetime
 import tensorflow as tf
 
 
@@ -32,8 +34,11 @@ if rank == master_rank:
     #cluster = PBTCluster(10, comm, master_rank, do_exploit=False)
     #The grid search case
     #cluster = PBTCluster(10, comm, master_rank, do_exploit=False, do_explore=False)
-
-    cluster.train(2)
+    start_time = time.time()
+    cluster.train(20)
+    cluster.flush_all_instructions()
+    end_time = time.time()
+    print 'Training takes {}'.format(datetime.timedelta(seconds=(end_time-start_time)))
 
     #cluster.report_plot_for_toy_model()
 
