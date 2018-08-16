@@ -28,7 +28,7 @@ class Cifar10Model:
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
             cifar10_main.main(self.hparams, self.cluster_id, save_base_dir, data_dir, 1)
-        self.train_step += num_steps
+        self.train_step += 1
         return
 
     def perturb_hparams_and_update_graph(self):

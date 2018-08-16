@@ -273,7 +273,7 @@ def resnet_model_fn(features, labels, mode, model_class,
     tf.summary.scalar('learning_rate', learning_rate)
 
     optimizer = solver_func(learning_rate) # Xinyi modified
-    print('Xinyi test after optimizer {}'.format(flags.FLAGS.optimizer))
+    #print('Xinyi test after optimizer {}'.format(flags.FLAGS.optimizer))
 
     if loss_scale != 1:
       # When computing fp16 gradients, often intermediate tensor values are

@@ -18,13 +18,14 @@ from mnist_dataset import load_dataset
 load_dataset()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(4, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(10, comm, master_rank, do_explore=False)
     #The explore only case
@@ -64,7 +65,7 @@ else:
             num_steps = data[1]
             for g in worker_graphs[:]:  # Take a copy of the list and then iterate over it, or the iteration will fail with unexpected results.
                 g.train()
-                print 'Graph {} step = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
+                print 'Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
                 if math.isnan(g.get_accuracy()) == True:
                     worker_graphs.remove(g)
                     print '[WARNING] The calculated accuracy of the graph is NaN, the program has removed the graph.'

@@ -116,8 +116,8 @@ class PBTCluster:
             all_values[bottom_index][2] = all_values[top_index][2]  # copy hparams
 
             # TODO: change the hard coded path to work with another models
-            source_dir = './resnet/model_' + all_values[top_index][0]
-            destination_dir = './resnet/model_' + all_values[bottom_index][0]
+            source_dir = './resnet/model_' + str(all_values[top_index][0])
+            destination_dir = './resnet/model_' + str(all_values[bottom_index][0])
             shutil.rmtree(destination_dir)
             shutil.copytree(source_dir, destination_dir)
 
