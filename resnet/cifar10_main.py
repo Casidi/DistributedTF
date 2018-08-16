@@ -312,13 +312,18 @@ def start(_): # Xinyi modified
     
     return eval_accuracy, flags.FLAGS.model_id
 
-    
+import sys
 def main(hp, model_id, save_base_dir, data_dir, train_epochs): # Xinyi modified
-  tf.logging.set_verbosity(tf.logging.INFO)
+  tf.logging.set_verbosity(tf.logging.ERROR)
   model_dir = save_base_dir + str(model_id)
+  
+  for name in list(flags.FLAGS):
+    delattr(flags.FLAGS, name)
   define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs)
   
-  return absl_app.run(start)
+  absl_app.parse_flags_with_usage(sys.argv)
+  return start(0)
+  #return absl_app.run(start)
   
     
 if __name__ == '__main__':

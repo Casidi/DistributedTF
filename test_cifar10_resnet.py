@@ -18,5 +18,10 @@ save_base_dir = './resnet/model_'
 data_dir = '/home/K8S/dataset/cifar10'
 train_epochs = 1
 
+results = []
 eval_accuracy, model_id = \
     cifar10_main.main(hp, model_id, save_base_dir, data_dir, train_epochs)
+print 'First run', (eval_accuracy, model_id)
+eval_accuracy, model_id = \
+    cifar10_main.main(hp, model_id+1, save_base_dir, data_dir, train_epochs)
+print 'Second run', (eval_accuracy, model_id)
