@@ -378,12 +378,9 @@ def resnet_main(
       inter_op_parallelism_threads=flags_obj.inter_op_parallelism_threads,
       intra_op_parallelism_threads=flags_obj.intra_op_parallelism_threads,
       allow_soft_placement=True)
+  session_config.gpu_options.allow_growth = True
 
-  distribution_strategy = distribution_utils.get_distribution_strategy(
-      flags_core.get_num_gpus(flags_obj), flags_obj.all_reduce_alg)
-
-  run_config = tf.estimator.RunConfig(
-      train_distribute=distribution_strategy, session_config=session_config)
+  run_config = tf.estimator.RunConfig(session_config=session_config)
 
   classifier = tf.estimator.Estimator(
       model_fn=model_function, model_dir=flags_obj.model_dir, config=run_config,
