@@ -1,6 +1,7 @@
 import math
 import shutil
 import subprocess
+import os
 
 import hyperopt.pyll.stochastic
 import matplotlib
@@ -119,8 +120,7 @@ class PBTCluster:
             # TODO: change the hard coded path to work with another models
             source_dir = './resnet/model_' + str(all_values[top_index][0])
             destination_dir = './resnet/model_' + str(all_values[bottom_index][0])
-            #shutil.rmtree(destination_dir)
-            #shutil.copytree(source_dir, destination_dir)
+            self.copyfiles(source_dir, destination_dir)
 
             graphs_need_updating.append(bottom_index)
             print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
@@ -146,10 +146,12 @@ class PBTCluster:
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv':
+                print 'Removing: {}'.format(path)
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv':
+            if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out'):
+                print 'Copying: {}'.format(path)
                 subprocess.call(['cp', path, dest_dir])
         
 
