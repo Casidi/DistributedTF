@@ -20,6 +20,9 @@ spec:
           mountPath: /DistributedTF
         - name: dataset-volume
           mountPath: /home/K8S/dataset
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # requesting 1 GPUs
       volumes:
       - name: hostpath-volume
         hostPath:
