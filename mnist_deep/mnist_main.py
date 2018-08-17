@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import csv
+import gzip
 
 def cnn_model_fn(features, labels, mode, params):
     """Model function for CNN."""
@@ -78,13 +79,13 @@ def cnn_model_fn(features, labels, mode, params):
 def main(hp, model_id, save_base_dir, data_dir, train_epochs):
     save_dir = save_base_dir + str(model_id)
 
-    with open(os.path.join(data_dir, 'train-images-idx3-ubyte'), 'rb') as file:
+    with gzip.open(os.path.join(data_dir, 'train-images-idx3-ubyte.gz'), 'rb') as file:
         train_data = np.frombuffer(file.read(), np.uint8, offset=16).astype(np.float32).reshape(-1,28*28)
-    with open(os.path.join(data_dir, 'train-labels-idx1-ubyte'), 'rb') as file:
+    with gzip.open(os.path.join(data_dir, 'train-labels-idx1-ubyte.gz'), 'rb') as file:
         train_labels = np.frombuffer(file.read(), np.uint8, offset=8).astype(np.int32)
-    with open(os.path.join(data_dir, 't10k-images-idx3-ubyte'), 'rb') as file:
+    with gzip.open(os.path.join(data_dir, 't10k-images-idx3-ubyte.gz'), 'rb') as file:
         eval_data = np.frombuffer(file.read(), np.uint8, offset=16).astype(np.float32).reshape(-1,28*28)
-    with open(os.path.join(data_dir, 't10k-labels-idx1-ubyte'), 'rb') as file:
+    with gzip.open(os.path.join(data_dir, 't10k-labels-idx1-ubyte.gz'), 'rb') as file:
         eval_labels = np.frombuffer(file.read(), np.uint8, offset=8).astype(np.int32)
 
     session_config = tf.ConfigProto(allow_soft_placement=True)

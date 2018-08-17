@@ -29,7 +29,9 @@ class MNISTDeepModelTestCase(unittest.TestCase):
     def test_multiple_hp_learning_curve(self):
         all_hparams = []
         for i in range(5):
-            all_hparams.append(generate_random_hparam())
+            hp = generate_random_hparam()
+            hp['opt_case']['lr'] /= 10000.0
+            all_hparams.append(hp)
         for i in range(len(all_hparams)):
             for j in range(20):
                 step, acc = mnist_main.main(all_hparams[i], i, self.save_base_dir, self.data_dir, 1)
