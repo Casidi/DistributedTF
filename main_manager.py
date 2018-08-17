@@ -18,8 +18,7 @@ from cifar10_model import Cifar10Model
 from toy_model import ToyModel
 from mnist_model import MNISTModel
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -27,24 +26,23 @@ master_rank = 0
 if rank == master_rank:
     subprocess.call(['rm', '-rf', 'savedata'])
     subprocess.call(['mkdir', 'savedata'])
+
     #The PBT case
-    #cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(4, comm, master_rank)
     #The exploit only case
-    #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_explore=False)
     #The explore only case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_exploit=False)
     #The grid search case
-    cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_exploit=False, do_explore=False)
     start_time = time.time()
-    cluster.train(100)
+    cluster.train(4)
     cluster.flush_all_instructions()
     end_time = time.time()
     print 'Training takes {}'.format(datetime.timedelta(seconds=(end_time-start_time)))
 
-    cluster.report_plot_for_toy_model()
-
-    #TODO: modify report_accuracy_plot to read data from csv
-    #cluster.report_accuracy_plot()
+    #cluster.report_plot_for_toy_model()
+    cluster.report_accuracy_plot()
 
     cluster.kill_all_workers()
 else:
@@ -63,8 +61,8 @@ else:
 
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
-                new_graph = ToyModel(i, hparam)
-                #new_graph = MNISTModel(i, hparam)
+                #new_graph = ToyModel(i, hparam)
+                new_graph = MNISTModel(i, hparam)
                 #new_graph = Cifar10Model(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:

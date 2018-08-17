@@ -27,8 +27,15 @@ class PBTCluster:
 
     def build_all_graphs(self):
         all_hparams_need_training = []
-        for i in range(self.pop_size):
-            all_hparams_need_training.append(generate_random_hparam())
+
+        #special test condition for explore only case                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        if not self.do_exploit and self.do_explore:
+            hp = generate_random_hparam()
+            for i in range(self.pop_size):
+                all_hparams_need_training.append(hp)
+        else:
+            for i in range(self.pop_size):
+                all_hparams_need_training.append(generate_random_hparam())
 
         print('Population size = {}'.format(self.pop_size))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
@@ -61,23 +68,19 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
-    def train(self, until_epoch_num):
-        round = 0
-        while until_epoch_num > 0:
+    def train(self, round_num):
+        for round in range(round_num):
             print '\nRound {}'.format(round)
-            steps_to_train = min(self.epochs_per_round, until_epoch_num)
 
             reqs = []
             for i in range(0, self.comm.Get_size()):
                 if i != self.master_rank:
-                    reqs.append(self.comm.isend((WorkerInstruction.TRAIN, steps_to_train), dest=i))
+                    reqs.append(self.comm.isend((WorkerInstruction.TRAIN, self.epochs_per_round), dest=i))
             for req in reqs:
                 req.wait()
 
-            until_epoch_num -= self.epochs_per_round
-            if until_epoch_num < 1: # No need to do exploit & explore for the last round.
+            if round == round_num-1: # No need to do exploit & explore for the last round.
                 return
-            round += 1
 
             if self.do_exploit:
                 self.exploit()
@@ -112,7 +115,6 @@ class PBTCluster:
         for i in range(num_graphs_to_copy):
             bottom_index = i
             top_index = len(all_values) - num_graphs_to_copy + i
-            # top_index = len(all_values) - 1 #for debug
             all_values[bottom_index][1] = all_values[top_index][1]  # copy accuracy, not necessary
             all_values[bottom_index][2] = all_values[top_index][2]  # copy hparams
 
@@ -201,55 +203,53 @@ class PBTCluster:
         # pyplot.show()
 
         if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
             out_file_name = 'toy_PBT.png'
         elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
             out_file_name = 'toy_exploit_only.png'
         elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
             out_file_name = 'toy_explore_only.png'
         else:
+            pyplot.title('Grid search')
             out_file_name = 'toy_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
 
     def report_accuracy_plot(self):
-        all_logs = self.get_all_training_log()
-        if len(all_logs) == 0:
-            print 'Error: No train logs'
-            return
+        csv_file_names = []
+        for i in os.listdir('./savedata'):
+            if i.startswith('model_'):
+                csv_file_names.append(os.path.join('./savedata', i, 'learning_curve.csv'))
 
-        fig, ax = pyplot.subplots()
-        for i in all_logs:
-            ax.plot(zip(*i)[0], zip(*i)[1])
+        all_acc = []
+        for i in csv_file_names:
+            acc = []
+            with open(i) as csvfile:
+                rows = csv.DictReader(csvfile)
+                for row in rows:
+                    acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
+            all_acc.append(acc)
 
-        start, end = ax.get_xlim()
-        ax.xaxis.set_ticks(np.arange(0.0, end, 4))
-        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+        for i in all_acc:
+            pyplot.plot(zip(*i)[0], zip(*i)[1])
+
         pyplot.xlabel(r'Train step')
         pyplot.ylabel(r'Accuracy')
         pyplot.grid(True)
 
         if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
             out_file_name = 'acc_PBT.png'
         elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
             out_file_name = 'acc_exploit_only.png'
         elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
             out_file_name = 'acc_explore_only.png'
         else:
+            pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
-
-    def get_all_training_log(self):
-        reqs = []
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.GET_TRAIN_LOG,), dest=i))
-        for req in reqs:
-            req.wait()
-
-        all_logs = []
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                data = self.comm.recv(source=i)
-                all_logs += data
-        return all_logs
