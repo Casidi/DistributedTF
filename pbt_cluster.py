@@ -3,7 +3,7 @@ import shutil
 import subprocess
 import os
 
-import hyperopt.pyll.stochastic
+from constants import generate_random_hparam
 import matplotlib
 matplotlib.use('Agg')  # Force matplotlib to not use any Xwindows backend.
 from matplotlib import pyplot
@@ -26,10 +26,8 @@ class PBTCluster:
 
     def build_all_graphs(self):
         all_hparams_need_training = []
-        hp_space = load_hp_space()
         for i in range(self.pop_size):
-            hparams = hyperopt.pyll.stochastic.sample(hp_space)
-            all_hparams_need_training.append(hparams)
+            all_hparams_need_training.append(generate_random_hparam())
 
         print('Population size = {}'.format(self.pop_size))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))

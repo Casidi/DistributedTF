@@ -1,5 +1,6 @@
 from enum import Enum
 from hyperopt import hp
+import hyperopt.pyll.stochastic
 
 class WorkerInstruction(Enum):
     ADD_GRAPHS = 0
@@ -17,43 +18,33 @@ def get_hp_range_definition():
         'optimizer_list': ['Adadelta', 'Adagrad', 'Momentum', \
                 'Adam', 'RMSProp', 'gd'],
         'lr': {
-                'Adadelta': [0.01, 0.1, 1.0],
-                'Adagrad': [0.0001, 0.001, 0.01],
-                'Momentum': [0.000001, 0.00001, 0.0001],
-                'Adam': [0.00001, 0.0001, 0.001],
-                'RMSProp': [0.000001, 0.00001, 0.0001, 0.001],
-                'gd': [0.00001, 0.0001, 0.001]
+                'Adadelta': [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
+                'Adagrad': [1e-3, 1e-2, 1e-1, 0.5, 1.0],
+                'Momentum': [1e-3, 1e-2, 1e-1, 0.5, 1.0],
+                'Adam': [1e-4, 1e-3, 1e-2, 1e-1],
+                'RMSProp': [1e-5, 1e-4, 1e-3],
+                'gd': [1e-2, 1e-1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
                 },
-        'momentum': [0.00, 0.99],
-        'grad_decay': [0.50, 0.99],
-        'decay_steps': [30, 40, 50, 60, 70, 80, 90, 100],
+        'momentum': [0.00, 0.9],
+        'grad_decay': [0.00, 0.9],
+        'decay_steps': [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
         'decay_rate': [0.1, 1.0],
-        'dropout': [0.0, 0.1, 0.2, 0.3, 0.4, \
-                        0.5, 0.6, 0.7, 0.8, 0.9],
+        'weight_decay': [1e-8, 1e-2],
         'regularizer': ['l1_regularizer', \
                         'l2_regularizer', \
                         'l1_l2_regularizer', \
                         'None'],
-        'initializer': ['tf.glorot_normal_initializer', \
+        'initializer': ['glorot_normal', \
                         'orthogonal', \
-                        'tf.keras.initializers.he_normal',
+                        'he_init',
                         'None'],
-        'batch_size': [255],
-        'num_filters_1': [24, 32],
-        'kernel_size_1': [3, 5, 7],
-        'kernel_size_2': [3, 5, 7],
-        'activation': ['relu', 'softplus', 'tanh', 'sigmoid', 'selu']
-        }
+        'batch_size': [255]
+    }
     return range_def_dict
     
 def load_hp_space():
     range_def = get_hp_range_definition()
-    space = {
-        'h_0': hp.uniform('h_0', \
-                    range_def['h_0'][0], range_def['h_0'][1]),
-        'h_1': hp.uniform('h_1', \
-                    range_def['h_1'][0], range_def['h_1'][1]),
-
+    space = {       
         'opt_case':hp.choice('opt_case',
         [
             {
@@ -91,22 +82,16 @@ def load_hp_space():
                     range_def['decay_steps']),
         'decay_rate': hp.uniform('decay_rate', \
                     range_def['decay_rate'][0], range_def['decay_rate'][1]),
-        'dropout': hp.choice('dropout', \
-                    range_def['dropout']),
+        'weight_decay': hp.uniform('weight_decay', \
+                    range_def['weight_decay'][0], range_def['weight_decay'][1]),
         'regularizer': hp.choice('regularizer', \
                     range_def['regularizer']),
         'initializer': hp.choice('initializer', \
                     range_def['initializer']),
-        'batch_size': hp.randint('batch_size', range_def['batch_size'][0]),
-        
-        # To be continued
-        'num_filters_1': hp.choice('num_filters_1', \
-                    [24, 32]),
-        'kernel_size_1': hp.choice('kernel_size_1', \
-                    [3, 5, 7]),
-        'kernel_size_2': hp.choice('kernel_size_2', \
-                    [3, 5, 7]),
-        'activation': hp.choice('kernel_size_2', \
-                    ['relu', 'softplus', 'tanh', 'sigmoid', 'selu'])
+        'batch_size': hp.randint('batch_size', range_def['batch_size'][0])
         }
     return space
+
+def generate_random_hparam():
+    hp_space = load_hp_space()
+    return hyperopt.pyll.stochastic.sample(hp_space)

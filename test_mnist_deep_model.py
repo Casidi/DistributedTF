@@ -4,29 +4,36 @@ sys.path.insert(0, './mnist_deep')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 from mnist_deep import mnist_main
+from constants import generate_random_hparam
 import unittest
 import subprocess
 
-class ToyModelTestCase(unittest.TestCase):
+class MNISTDeepModelTestCase(unittest.TestCase):
     def setUp(self):
-        self.hp = {
-            'opt_case': {'lr': 0.1, 'optimizer': 'Momentum', 'momentum': 0.9},
-            'decay_steps': 20,
-            'decay_rate': 0.1,
-            'weight_decay': 2e-4,
-            'regularizer': 'l2_regularizer',
-            'initializer': 'he_init',
-            'batch_size': 128}
+        self.hp = generate_random_hparam()
+        self.hp_good = {'opt_case':{'optimizer': 'gd', 'lr':0.0001},
+                            'batch_size': 256}
         self.save_base_dir = './savedata/model_'
-        self.data_dir = '/home/K8S/dataset/cifar10'
+        self.data_dir = '/home/K8S/dataset/mnist'
 
         subprocess.call(['rm', '-rf', './savedata/model_*'])
 
     def tearDown(self):
         subprocess.call(['rm', '-rf', './savedata/model_*'])
 
-    def test_availability(self):
-        mnist_main.main(self.hp, 0, self.save_base_dir, self.data_dir, 1)
+    '''def test_seperated_calls_to_main(self):
+        for i in range(10):
+            step, acc = mnist_main.main(self.hp, 0, self.save_base_dir, self.data_dir, 1)
+            print 'Step {}, acc = {}'.format(step, acc)'''
+
+    def test_multiple_hp_learning_curve(self):
+        all_hparams = []
+        for i in range(5):
+            all_hparams.append(generate_random_hparam())
+        for i in range(len(all_hparams)):
+            for j in range(20):
+                step, acc = mnist_main.main(all_hparams[i], i, self.save_base_dir, self.data_dir, 1)
+                print 'Model {}, step={}, acc={}'.format(i, step, acc)
 
 unittest.main(verbosity=2)
 
