@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, './resnet')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 #NOTE: tensorflow >= 1.10 required
 from resnet import cifar10_main

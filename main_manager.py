@@ -20,7 +20,7 @@ from mnist_dataset import load_dataset
 load_dataset()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
