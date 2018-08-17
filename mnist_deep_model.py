@@ -21,7 +21,8 @@ class MNISTDeepModel:
                          self.y_: train_labels, 
                          self.is_training: True,
                          self.keep_prob: self.hparams['dropout']})            
-            self.train_step += 1            
+            self.train_step += 1
+            
 
     def perturb_hparams_and_update_graph(self):
         #TODO: implement this function to get the exploring working
@@ -48,7 +49,7 @@ class MNISTDeepModel:
                 feed_dict={self.x: images,
                         self.y_: labels, 
                         self.is_training: False,
-                        self.keep_prob: self.hparams['dropout']})
+                        self.keep_prob: 1.0}) # Should turn off dropout when do evaluation
         return total_accuracy / num_batches
 
     def get_values(self):
