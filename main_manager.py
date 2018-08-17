@@ -3,6 +3,7 @@
 
 from mpi4py import MPI
 import os
+import subprocess
 import math
 import time
 import datetime
@@ -24,21 +25,23 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 master_rank = 0
 if rank == master_rank:
+    subprocess.call(['rm', '-rf', 'savedata'])
+    subprocess.call(['mkdir', 'savedata'])
     #The PBT case
-    cluster = PBTCluster(4, comm, master_rank)
+    #cluster = PBTCluster(2, comm, master_rank)
     #The exploit only case
-    #cluster = PBTCluster(10, comm, master_rank, do_explore=False)
+    #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case
-    #cluster = PBTCluster(10, comm, master_rank, do_exploit=False)
+    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
     #The grid search case
-    #cluster = PBTCluster(10, comm, master_rank, do_exploit=False, do_explore=False)
+    cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
     start_time = time.time()
-    cluster.train(20)
+    cluster.train(100)
     cluster.flush_all_instructions()
     end_time = time.time()
     print 'Training takes {}'.format(datetime.timedelta(seconds=(end_time-start_time)))
 
-    #cluster.report_plot_for_toy_model()
+    cluster.report_plot_for_toy_model()
 
     #TODO: modify report_accuracy_plot to read data from csv
     #cluster.report_accuracy_plot()
@@ -60,14 +63,14 @@ else:
 
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
-                #new_graph = ToyModel(i, hparam)
+                new_graph = ToyModel(i, hparam)
                 #new_graph = MNISTModel(i, hparam)
-                new_graph = Cifar10Model(i, hparam)
+                #new_graph = Cifar10Model(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
             for g in worker_graphs[:]:  # Take a copy of the list and then iterate over it, or the iteration will fail with unexpected results.
-                g.train()
+                g.train(num_steps)
                 print 'Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy())
                 if math.isnan(g.get_accuracy()) == True:
                     worker_graphs.remove(g)

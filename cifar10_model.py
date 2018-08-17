@@ -24,7 +24,7 @@ class Cifar10Model:
         self.accuracy = 0.0
     
     def train(self):
-        save_base_dir = './resnet/model_'
+        save_base_dir = './savedata/model_'
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
             cifar10_main.main(self.hparams, self.cluster_id, save_base_dir, data_dir, 1)

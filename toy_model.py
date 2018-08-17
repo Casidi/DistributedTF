@@ -1,102 +1,118 @@
 import tensorflow as tf
 import random
+import os
+import csv
+
+def main(hp, model_id, save_base_dir, data_dir, train_epochs):
+    save_dir = save_base_dir + str(model_id)
+
+    tf.reset_default_graph()
+    theta_0 = tf.Variable(0.9)
+    theta_1 = tf.Variable(0.9)
+    surrogate_obj = 1.2 - (hp['h_0']*tf.square(theta_0) + hp['h_1']*tf.square(theta_1))
+    obj = 1.2 - (tf.square(theta_0) + tf.square(theta_1))
+    
+    global_step = tf.train.get_or_create_global_step()
+    loss = tf.square((obj - surrogate_obj))
+    optimizer = tf.train.GradientDescentOptimizer(0.02)
+    train_op = optimizer.minimize(loss, global_step=global_step)
+
+    init_op = tf.global_variables_initializer()
+
+    saver = tf.train.Saver()
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess:
+        sess.run(init_op)
+        if os.path.isdir(save_dir):
+            saver.restore(sess, os.path.join(save_dir, "model.ckpt"))
+
+        results_to_log = []
+        for i in range(train_epochs):
+            results_to_log.append(sess.run([theta_0, theta_1]))
+            sess.run(train_op)
+
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
+        saver.save(sess, os.path.join(save_dir, "model.ckpt"))
+
+        filename = os.path.join(save_dir,'learning_curve.csv')
+        file_exists = os.path.isfile(filename)
+        fields=['theta_0','theta_1']
+        with open(filename, 'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fields)
+            if not file_exists:
+                writer.writeheader()
+
+            for i in results_to_log:
+                writer.writerow({'theta_0': i[0], 'theta_1': i[1]})
+            return 0, sess.run(obj)
 
 class ToyModel:
     def __init__(self, cluster_id, hparams):
         self.cluster_id = cluster_id
         self.hparams = hparams
-        self.train_step = 0
+        self.epoches_trained = 0
         self.need_explore = False
 
         self.perturb_factors = [0.8, 1.2]
-        self.lr = 0.02
 
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
             self.hparams['h_1'] = 1.0
         else:
             self.hparams['h_0'] = 1.0
-            #self.hparams['h_1'] = 0.0
-            self.hparams['h_1'] = float('nan')  # Use for testing NaN error handling
+            self.hparams['h_1'] = 0.0
 
-        self.build_graph_from_hparams(is_first_call=True)
-        self.train_log = []
-
-    def train(self, num_steps):
-        for i in range(num_steps):
-            self.train_log.append(self.sess.run(self.trainable_vars))
-            self.sess.run(self.train_op)
-            self.train_step += 1    
+        self.accuracy = 0.0
+    
+    def train(self, epoches_to_train):
+        save_base_dir = './savedata/model_'
+        data_dir = ''
+        step, self.accuracy = \
+            main(self.hparams, self.cluster_id, save_base_dir, data_dir, epoches_to_train)
+        self.epoches_trained += 1
+        return
 
     def perturb_hparams_and_update_graph(self):
         self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)
         self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
-        self.build_graph_from_hparams(is_first_call=False)
+        return
 
     def get_accuracy(self):
-        return self.sess.run(self.obj)
+        return self.accuracy
 
     def get_values(self):
-        return [self.cluster_id, self.get_accuracy(), self.sess.run(self.trainable_vars), self.hparams]
+        return [self.cluster_id, self.get_accuracy(), self.hparams]
 
+    #overwrite the copying of hparam
     def set_values(self, values):
-        for i in range(len(self.trainable_vars)):
-            self.trainable_vars[i].load(values[2][i], self.sess)
-        
-        # Skip the copying of hyper-parameters to obtain the result of the paper
-        '''self.hparams = values[3]
-        self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
-        self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
-        self.loss = tf.square((self.obj - self.surrogate_obj))
-
-        self.optimizer = tf.train.GradientDescentOptimizer(0.02)
-        self.train_op = self.optimizer.minimize(self.loss)'''
-    
-    def build_graph_from_hparams(self, is_first_call):
-        if not is_first_call:
-            old_values = self.sess.run(self.trainable_vars)
-
-        self.tf_graph = tf.Graph()
-        config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.1
-        self.sess = tf.Session(graph=self.tf_graph, config=config)
-        
-        with self.tf_graph.as_default():
-            self.theta_0 = tf.Variable(0.9)
-            self.theta_1 = tf.Variable(0.9)
-            self.surrogate_obj = 1.2 - (self.hparams['h_0']*tf.square(self.theta_0) + self.hparams['h_1']*tf.square(self.theta_1))
-            self.obj = 1.2 - (tf.square(self.theta_0) + tf.square(self.theta_1))
-            self.loss = tf.square((self.obj - self.surrogate_obj))
-
-            self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
-            self.train_op = self.optimizer.minimize(self.loss)
-
-            self.trainable_vars = [self.theta_0, self.theta_1]
-        self.sess.run([var.initializer for var in self.trainable_vars])
-
-        if not is_first_call:
-            for i in range(len(self.trainable_vars)):
-                self.trainable_vars[i].load(old_values[i], self.sess)
+        if self.cluster_id == 0:
+            self.hparams['h_0'] = 0.0
+            self.hparams['h_1'] = 1.0
+        else:
+            self.hparams['h_0'] = 1.0
+            self.hparams['h_1'] = 0.0
 
     def _perturb_float(self, val, limit_min, limit_max):
-            #NOTE: some hp value can't exceed reasonable range
-            float_string = str(limit_min)
-            if 'e' in float_string:
-                _, n_digits = float_string.split('e')
-                if '-' in n_digits:
-                    n_digits = int(n_digits)*-1
-                else:
-                    n_digits = int(n_digits)
+        #NOTE: some hp value can't exceed reasonable range
+        float_string = str(limit_min)
+        if 'e' in float_string:
+            _, n_digits = float_string.split('e')
+            if '-' in n_digits:
+                n_digits = int(n_digits)*-1
             else:
-                n_digits = str(limit_min)[::-1].find('.')
-            min = val * self.perturb_factors[0]
-            max = val * self.perturb_factors[1]
-            if min < limit_min:
-                min = limit_min
-                n_digits += 1
-            if max > limit_max:
-                max = limit_max
-            val = random.uniform(min, max)
-            val = round(val, n_digits)
-            
-            return val
+                n_digits = int(n_digits)
+        else:
+            n_digits = str(limit_min)[::-1].find('.')
+        min = val * self.perturb_factors[0]
+        max = val * self.perturb_factors[1]
+        if min < limit_min:
+            min = limit_min
+            n_digits += 1
+        if max > limit_max:
+            max = limit_max
+        val = random.uniform(min, max)
+        val = round(val, n_digits)
+        
+        return val

@@ -2,6 +2,7 @@ import math
 import shutil
 import subprocess
 import os
+import csv
 
 from constants import generate_random_hparam
 import matplotlib
@@ -20,7 +21,7 @@ class PBTCluster:
         self.master_rank = master_rank
         self.do_exploit = do_exploit
         self.do_explore = do_explore
-        self.epochs_per_round = 1
+        self.epochs_per_round = 4
 
         self.build_all_graphs()
 
@@ -115,9 +116,8 @@ class PBTCluster:
             all_values[bottom_index][1] = all_values[top_index][1]  # copy accuracy, not necessary
             all_values[bottom_index][2] = all_values[top_index][2]  # copy hparams
 
-            # TODO: change the hard coded path to work with another models
-            source_dir = './resnet/model_' + str(all_values[top_index][0])
-            destination_dir = './resnet/model_' + str(all_values[bottom_index][0])
+            source_dir = './savedata/model_' + str(all_values[top_index][0])
+            destination_dir = './savedata/model_' + str(all_values[bottom_index][0])
             self.copyfiles(source_dir, destination_dir)
 
             graphs_need_updating.append(bottom_index)
@@ -138,9 +138,6 @@ class PBTCluster:
             req.wait()
 
     def copyfiles(self, src_dir, dest_dir):
-        #subprocess.call(['rm', '-rf', dest_dir])
-        #subprocess.call(['cp', '-r', src_dir, dest_dir])
-        
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv':
@@ -174,7 +171,19 @@ class PBTCluster:
                 data = self.comm.recv(source=i)
 
     def report_plot_for_toy_model(self):
-        training_log = self.get_all_training_log()
+        csv_file_names = []
+        for i in os.listdir('./savedata'):
+            if i.startswith('model_'):
+                csv_file_names.append(os.path.join('./savedata', i, 'learning_curve.csv'))
+
+        all_acc = []
+        for i in csv_file_names:
+            acc = []
+            with open(i) as csvfile:
+                rows = csv.DictReader(csvfile)
+                for row in rows:
+                    acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
+            all_acc.append(acc)
 
         linspace_x = np.linspace(start=0, stop=1, num=100)
         linspace_y = np.linspace(start=0, stop=1, num=100)
@@ -186,19 +195,19 @@ class PBTCluster:
         pyplot.xlim(0, 1)
         pyplot.ylim(0, 1)
 
-        pyplot.plot(zip(*training_log[0])[0], zip(*training_log[0])[1], '.', color='black')
-        pyplot.plot(zip(*training_log[1])[0], zip(*training_log[1])[1], '.', color='red')
+        for i in all_acc:
+            pyplot.plot(zip(*i)[0], zip(*i)[1], '.')
         pyplot.contour(x, y, z, colors='lightgray')
         # pyplot.show()
 
         if self.do_exploit and self.do_explore:
-            out_file_name = 'PBT.png'
+            out_file_name = 'toy_PBT.png'
         elif self.do_exploit and not self.do_explore:
-            out_file_name = 'exploit_only.png'
+            out_file_name = 'toy_exploit_only.png'
         elif not self.do_exploit and self.do_explore:
-            out_file_name = 'explore_only.png'
+            out_file_name = 'toy_explore_only.png'
         else:
-            out_file_name = 'grid_search.png'
+            out_file_name = 'toy_grid_search.png'
         pyplot.savefig(out_file_name)
         print 'Writing results to {}'.format(out_file_name)
 
