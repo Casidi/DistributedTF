@@ -15,9 +15,7 @@ from constants import WorkerInstruction
 #TODO: switch models using import as
 from cifar10_model import Cifar10Model
 from toy_model import ToyModel
-from mnist_deep_model import MNISTDeepModel
-from mnist_dataset import load_dataset
-load_dataset()
+from mnist_model import MNISTModel
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 #os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -63,14 +61,14 @@ else:
             for i in range(cluster_id_begin, cluster_id_end):
                 hparam = hparam_list[i-cluster_id_begin]
                 #new_graph = ToyModel(i, hparam)
-                #new_graph = MNISTDeepModel(i, hparam)
+                #new_graph = MNISTModel(i, hparam)
                 new_graph = Cifar10Model(i, hparam)
                 worker_graphs.append(new_graph)
         elif inst == WorkerInstruction.TRAIN:
             num_steps = data[1]
             for g in worker_graphs[:]:  # Take a copy of the list and then iterate over it, or the iteration will fail with unexpected results.
                 g.train()
-                print 'Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.train_step, g.get_accuracy())
+                print 'Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy())
                 if math.isnan(g.get_accuracy()) == True:
                     worker_graphs.remove(g)
                     print '[WARNING] The calculated accuracy of the graph is NaN, the program has removed the graph.'
