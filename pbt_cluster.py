@@ -12,6 +12,7 @@ matplotlib.use('Agg')  # Force matplotlib to not use any Xwindows backend.
 from matplotlib import pyplot
 import matplotlib.ticker as ticker
 import numpy as np
+import six
 
 from constants import WorkerInstruction
 from constants import get_hp_range_definition, load_hp_space
@@ -136,7 +137,7 @@ class PBTCluster:
             worker_rank_to_graphs_need_updating[worker_rank].append(all_values[i])
 
         reqs = []
-        for worker_rank, values in worker_rank_to_graphs_need_updating.iteritems():
+        for worker_rank, values in six.iteritems(worker_rank_to_graphs_need_updating):
             reqs.append(self.comm.isend((WorkerInstruction.SET, values), dest=worker_rank))
         for req in reqs:
             req.wait()
@@ -152,7 +153,6 @@ class PBTCluster:
             if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out'):
                 print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
-        
 
     def explore(self):
         reqs = []
@@ -204,7 +204,7 @@ class PBTCluster:
         pyplot.ylim(0, 1)
 
         for i in all_acc:
-            pyplot.plot(zip(*i)[0], zip(*i)[1], '.')
+            pyplot.plot(list(zip(*i))[0], list(zip(*i))[1], '.')
         pyplot.contour(x, y, z, colors='lightgray')
         # pyplot.show()
 
@@ -239,7 +239,7 @@ class PBTCluster:
             all_acc.append(acc)
 
         for i in all_acc:
-            pyplot.plot(zip(*i)[0], zip(*i)[1])
+            pyplot.plot(list(zip(*i))[0], list(zip(*i))[1])
 
         pyplot.xlabel(r'Train step')
         pyplot.ylabel(r'Accuracy')
