@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import math
 import shutil
 import subprocess
@@ -23,9 +25,9 @@ class PBTCluster:
         self.do_explore = do_explore
         self.epochs_per_round = 4
 
-        self.build_all_graphs()
+        self.dispatch_hparams_to_workers()
 
-    def build_all_graphs(self):
+    def dispatch_hparams_to_workers(self):
         all_hparams_need_training = []
 
         #special test condition for explore only case                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
@@ -70,7 +72,7 @@ class PBTCluster:
 
     def train(self, round_num):
         for round in range(round_num):
-            print '\nRound {}'.format(round)
+            print('\nRound {}'.format(round))
 
             reqs = []
             for i in range(0, self.comm.Get_size()):
@@ -123,7 +125,7 @@ class PBTCluster:
             self.copyfiles(source_dir, destination_dir)
 
             graphs_need_updating.append(bottom_index)
-            print 'Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0])
+            print('Copied: {} -> {}'.format(all_values[top_index][0], all_values[bottom_index][0]))
 
         # only update the bottom graphs
         worker_rank_to_graphs_need_updating = {}
@@ -143,12 +145,12 @@ class PBTCluster:
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv':
-                print 'Removing: {}'.format(path)
+                print('Removing: {}'.format(path))
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out'):
-                print 'Copying: {}'.format(path)
+                print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
         
 
@@ -172,6 +174,10 @@ class PBTCluster:
             if i != self.master_rank:
                 data = self.comm.recv(source=i)
 
+    def report_best_model(self):
+        #save the best HP and corresponding model id to json
+        return
+        
     def report_plot_for_toy_model(self):
         csv_file_names = []
         for i in os.listdir('./savedata'):
@@ -215,7 +221,7 @@ class PBTCluster:
             pyplot.title('Grid search')
             out_file_name = 'toy_grid_search.png'
         pyplot.savefig(out_file_name)
-        print 'Writing results to {}'.format(out_file_name)
+        print('Writing results to {}'.format(out_file_name))
 
     def report_accuracy_plot(self):
         csv_file_names = []
@@ -252,4 +258,4 @@ class PBTCluster:
             pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
         pyplot.savefig(out_file_name)
-        print 'Writing results to {}'.format(out_file_name)
+        print('Writing results to {}'.format(out_file_name))
