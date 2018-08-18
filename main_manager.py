@@ -91,11 +91,6 @@ else:
                     print '[{}]Exploring graph {}'.format(rank, g.cluster_id)
                     g.perturb_hparams_and_update_graph()
                     g.need_explore = False
-        elif inst == WorkerInstruction.GET_TRAIN_LOG:
-            logs_to_send = []
-            for g in worker_graphs:
-                logs_to_send.append(g.train_log)
-            comm.send(logs_to_send, dest=master_rank)
         elif inst == WorkerInstruction.EXIT:
             break
         else:
