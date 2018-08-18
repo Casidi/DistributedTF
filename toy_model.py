@@ -46,7 +46,7 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 
             for i in results_to_log:
                 writer.writerow({'theta_0': i[0], 'theta_1': i[1]})
-            return 0, sess.run(obj)
+            return sess.run([global_step, obj])
 
 class ToyModel:
     def __init__(self, cluster_id, hparams):
