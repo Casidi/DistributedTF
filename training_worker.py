@@ -45,9 +45,9 @@ class TrainingWorker:
 
         for i in range(id_begin, cluster_id_end):
             hparam = hparam_list[i - id_begin]
-            new_graph = ToyModel(i, hparam)
-            #new_graph = MNISTModel(i, hparam)
-            #new_graph = Cifar10Model(i, hparam)
+            new_graph = ToyModel(i, hparam, './savedata/model_')
+            #new_graph = MNISTModel(i, hparam, './savedata/model_')
+            #new_graph = Cifar10Model(i, hparam, './savedata/model_')
             self.worker_graphs.append(new_graph)
 
     def train(self, num_epoches):
@@ -75,5 +75,5 @@ class TrainingWorker:
         for g in self.worker_graphs:
             if g.need_explore or self.is_expolore_only:
                 print('[{}]Exploring graph {}'.format(self.rank, g.cluster_id))
-                g.perturb_hparams_and_update_graph()
+                g.perturb_hparams()
                 g.need_explore = False

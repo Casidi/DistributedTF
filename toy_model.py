@@ -49,13 +49,14 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
             return sess.run([global_step, obj])
 
 class ToyModel:
-    def __init__(self, cluster_id, hparams):
+    def __init__(self, cluster_id, hparams, save_base_dir):
         self.cluster_id = cluster_id
         self.hparams = hparams
+        self.save_base_dir = save_base_dir
         self.epoches_trained = 0
         self.need_explore = False
 
-        self.perturb_factors = [0.8, 1.2]
+        self._perturb_factors = [0.8, 1.2]
 
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
@@ -67,17 +68,14 @@ class ToyModel:
         self.accuracy = 0.0
     
     def train(self, epoches_to_train):
-        save_base_dir = './savedata/model_'
         data_dir = ''
         step, self.accuracy = \
-            main(self.hparams, self.cluster_id, save_base_dir, data_dir, epoches_to_train)
+            main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)
         self.epoches_trained += 1
-        return
 
-    def perturb_hparams_and_update_graph(self):
+    def perturb_hparams(self):
         self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)
         self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
-        return
 
     def get_accuracy(self):
         return self.accuracy
@@ -105,8 +103,8 @@ class ToyModel:
                 n_digits = int(n_digits)
         else:
             n_digits = str(limit_min)[::-1].find('.')
-        min = val * self.perturb_factors[0]
-        max = val * self.perturb_factors[1]
+        min = val * self._perturb_factors[0]
+        max = val * self._perturb_factors[1]
         if min < limit_min:
             min = limit_min
             n_digits += 1

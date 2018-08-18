@@ -5,9 +5,10 @@ sys.path.insert(0, './resnet')
 from resnet import cifar10_main
 
 class Cifar10Model:
-    def __init__(self, cluster_id, hparams):
+    def __init__(self, cluster_id, hparams, save_base_dir):
         self.cluster_id = cluster_id
         self.hparams = hparams
+        self.save_base_dir = save_base_dir
         self.epoches_trained = 0
         self.need_explore = False
 
@@ -24,14 +25,13 @@ class Cifar10Model:
         self.accuracy = 0.0
     
     def train(self):
-        save_base_dir = './savedata/model_'
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
-            cifar10_main.main(self.hparams, self.cluster_id, save_base_dir, data_dir, 1)
+            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, 1)
         self.epoches_trained += 1
         return
 
-    def perturb_hparams_and_update_graph(self):
+    def perturb_hparams(self):
         #TODO: implement this function to get the exploring working
         return
 
