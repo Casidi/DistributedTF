@@ -140,9 +140,10 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
     return eval_results['global_step'], eval_results['accuracy']
 
 class MNISTModel:
-    def __init__(self, cluster_id, hparams):
+    def __init__(self, cluster_id, hparams, save_base_dir):
         self.cluster_id = cluster_id
         self.hparams = hparams
+        self.save_base_dir = save_base_dir
         self.epoches_trained = 0
         self.need_explore = False
 
@@ -152,14 +153,13 @@ class MNISTModel:
         self.perturb_factors = [0.8, 1.2]
     
     def train(self, epoches_to_train):
-        save_base_dir = './savedata/model_'
         data_dir = '/home/K8S/dataset/mnist'
         step, self.accuracy = \
-            main(self.hparams, self.cluster_id, save_base_dir, data_dir, epoches_to_train)
+            main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)
         self.epoches_trained += 1
         return
 
-    def perturb_hparams_and_update_graph(self):
+    def perturb_hparams(self):
         def _perturb_float(val, limit_min, limit_max):
             # Noted, some hp value can't exceed reasonable range
             float_string = str(limit_min)

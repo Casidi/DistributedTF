@@ -21,6 +21,9 @@ class MNISTDeepModelTestCase(unittest.TestCase):
     def tearDown(self):
         subprocess.call(['rm', '-rf', './savedata/model_*'])
 
+    def test_basic(self):
+        model = MNISTModel(0, generate_random_hparam())
+        
     def test_perturb_hparams(self):
         model = MNISTModel(0, generate_random_hparam())
         model.perturb_hparams_and_update_graph()
