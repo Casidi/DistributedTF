@@ -8,16 +8,7 @@ import datetime
 import tensorflow as tf
 
 from pbt_cluster import PBTCluster
-<<<<<<< HEAD
-from constants import WorkerInstruction
-
-# Available models
-from cifar10_model import Cifar10Model
-from toy_model import ToyModel
-from mnist_model import MNISTModel
-=======
 from training_worker import TrainingWorker
->>>>>>> 9f92b38d342af32f29155193a26d1beadd208830
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
