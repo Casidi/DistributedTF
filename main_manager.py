@@ -20,17 +20,17 @@ if rank == master_rank:
     subprocess.call(['mkdir', 'savedata'])
 
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(4, comm, master_rank)
     #The exploit only case
-    #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_explore=False)
     #The explore only case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_exploit=False)
     #The grid search case
-    #cluster = PBTCluster(2, comm, master_rank, do_exploit=False, do_explore=False)
+    #cluster = PBTCluster(4, comm, master_rank, do_exploit=False, do_explore=False)
 
     start_time = time.time()
 
-    cluster.train(50)
+    cluster.train(10)
     cluster.flush_all_instructions()
 
     end_time = time.time()
