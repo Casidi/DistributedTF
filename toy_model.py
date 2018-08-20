@@ -29,14 +29,14 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 
         results_to_log = []
         for i in range(train_epochs):
-            results_to_log.append(sess.run([theta_0, theta_1]))
+            results_to_log.append(sess.run([theta_0, theta_1, global_step, obj]))
             sess.run(train_op)
 
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
         saver.save(sess, os.path.join(save_dir, "model.ckpt"))
 
-        filename = os.path.join(save_dir,'learning_curve.csv')
+        filename = os.path.join(save_dir,'theta.csv')
         file_exists = os.path.isfile(filename)
         fields=['theta_0','theta_1']
         with open(filename, 'a') as csvfile:
@@ -46,7 +46,19 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 
             for i in results_to_log:
                 writer.writerow({'theta_0': i[0], 'theta_1': i[1]})
-            return sess.run([global_step, obj])
+
+        filename = os.path.join(save_dir,'learning_curve.csv')
+        file_exists = os.path.isfile(filename)
+        fields=['global_step','accuracy']
+        with open(filename, 'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fields)
+            if not file_exists:
+                writer.writeheader()
+
+            for i in results_to_log:
+                writer.writerow({'global_step': i[2], 'accuracy': i[3]})
+        
+        return sess.run([global_step, obj])
 
 class ToyModel:
     def __init__(self, cluster_id, hparams, save_base_dir):

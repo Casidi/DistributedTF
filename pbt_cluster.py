@@ -41,10 +41,11 @@ class PBTCluster:
             for i in range(self.pop_size):
                 all_hparams_need_training.append(generate_random_hparam())
 
-        with open('hparams.pickle', 'wb') as fp:
+        # for testing
+        '''with open('hparams.pickle', 'wb') as fp:
             pickle.dump(all_hparams_need_training, fp)
 
-        '''with open('hparams.pickle', 'rb') as fp:
+        with open('hparams.pickle', 'rb') as fp:
             all_hparams_need_training = pickle.load(fp)'''
 
         print('Population size = {}'.format(self.pop_size))
@@ -152,12 +153,14 @@ class PBTCluster:
     def copyfiles(self, src_dir, dest_dir):
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv':
+            if not os.path.isdir(path) and i != 'learning_curve.csv' 
+                    and i != 'theta.csv' and not i.startswith('.nfs'):
                 print('Removing: {}'.format(path))
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out') and not i.startswith('.nfs'):
+            if not os.path.isdir(path)  and i != 'theta.csv' and i != 'learning_curve.csv' 
+                    and not i.startswith('events.out') and not i.startswith('.nfs'):
                 print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
 
@@ -189,16 +192,16 @@ class PBTCluster:
         csv_file_names = []
         for i in os.listdir('./savedata'):
             if i.startswith('model_'):
-                csv_file_names.append(os.path.join('./savedata', i, 'learning_curve.csv'))
+                csv_file_names.append(os.path.join('./savedata', i, 'theta.csv'))
 
-        all_acc = []
+        all_theta = []
         for i in csv_file_names:
             acc = []
             with open(i) as csvfile:
                 rows = csv.DictReader(csvfile)
                 for row in rows:
                     acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
-            all_acc.append(acc)
+            all_theta.append(acc)
 
         linspace_x = np.linspace(start=0, stop=1, num=100)
         linspace_y = np.linspace(start=0, stop=1, num=100)
@@ -210,7 +213,7 @@ class PBTCluster:
         pyplot.xlim(0, 1)
         pyplot.ylim(0, 1)
 
-        for i in all_acc:
+        for i in all_theta:
             pyplot.plot(list(zip(*i))[0], list(zip(*i))[1], '.')
         pyplot.contour(x, y, z, colors='lightgray')
         # pyplot.show()
