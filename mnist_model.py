@@ -7,6 +7,56 @@ import os
 import csv
 import gzip
 
+def initializer_func(initializer_name): # Xinyi add
+  # Ref: https://becominghuman.ai/priming-neural-networks-with-an-appropriate-initializer-7b163990ead
+  # Noted: I like the normal myself because it allows more diversity in the training. 
+  # But I have no empirical evidence or theoretical argument that it works better than uniform
+  if initializer_name == 'glorot_normal':
+      initializer = tf.glorot_normal_initializer()
+  elif initializer_name == 'orthogonal':
+      initializer = tf.orthogonal_initializer(gain=1.0)
+  elif initializer_name == 'he_init':
+      initializer = tf.keras.initializers.he_normal()
+  else:
+      initializer = None
+      # Noted if None, tf.layers.conv2d and tf.layers.dense take glorot_uniform_initializer
+  return initializer
+
+def solver_func(hparams):
+    opt_name = hparams['opt_case']['optimizer']
+    learning_rate = hparams['opt_case']['lr']
+
+    if opt_name == 'Momentum' or opt_name == 'RMSProp':
+        momentum = hparams['opt_case']['momentum']
+    if opt_name == 'RMSProp':
+        grad_decay = hparams['opt_case']['grad_decay']
+    
+    if opt_name == 'Adadelta':
+        optimizer = tf.train.AdadeltaOptimizer( \
+            learning_rate=learning_rate)
+    elif opt_name == 'Adagrad':
+        optimizer = tf.train.AdagradOptimizer( \
+            learning_rate=learning_rate)
+    elif opt_name == 'Momentum':
+        optimizer = tf.train.MomentumOptimizer( \
+            learning_rate=learning_rate, \
+            momentum=momentum)
+    elif opt_name == 'Adam':
+        optimizer = tf.train.AdamOptimizer( \
+            learning_rate=learning_rate)
+    elif opt_name == 'RMSProp':
+        optimizer = tf.train.RMSPropOptimizer( \
+            learning_rate=learning_rate, \
+            momentum=momentum, \
+            decay=grad_decay)
+    elif opt_name == 'gd':
+        optimizer = tf.train.GradientDescentOptimizer( \
+            learning_rate=learning_rate)
+    else:
+        raise RuntimeError('Hyper-parameter optimizer is wrong!')
+    
+    return optimizer
+
 def cnn_model_fn(features, labels, mode, params):
     """Model function for CNN."""
     # Input Layer
@@ -18,7 +68,8 @@ def cnn_model_fn(features, labels, mode, params):
         filters=32,
         kernel_size=[5, 5],
         padding="same",
-        activation=tf.nn.relu)
+        activation=tf.nn.relu,
+        kernel_initializer=initializer_func(params['initializer']))
 
     # Pooling Layer #1
     pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
@@ -29,12 +80,14 @@ def cnn_model_fn(features, labels, mode, params):
         filters=64,
         kernel_size=[5, 5],
         padding="same",
-        activation=tf.nn.relu)
+        activation=tf.nn.relu,
+        kernel_initializer=initializer_func(params['initializer']))
     pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
     # Dense Layer
     pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
-    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu,
+                kernel_initializer=initializer_func(params['initializer']))
     dropout = tf.layers.dropout(
         inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -57,16 +110,7 @@ def cnn_model_fn(features, labels, mode, params):
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        if params['opt_case']['optimizer'] == 'gd':
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=params['opt_case']['lr'])
-        elif params['opt_case']['optimizer'] == 'Adagrad':
-            optimizer = tf.train.AdagradOptimizer(learning_rate=params['opt_case']['lr'])
-        elif params['opt_case']['optimizer'] == 'Adadelta':
-            optimizer = tf.train.AdadeltaOptimizer(learning_rate=params['opt_case']['lr'])
-        elif params['opt_case']['optimizer'] == 'Adam':
-            optimizer = tf.train.AdamOptimizer(learning_rate=params['opt_case']['lr'])
-        else:
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.0001)
+        optimizer = solver_func(params)
         train_op = optimizer.minimize(
             loss=loss,
             global_step=tf.train.get_global_step())
@@ -150,7 +194,7 @@ class MNISTModel:
         self.accuracy = 0.0
 
         self.hparams['opt_case']['lr'] /= 1000.0
-        self.perturb_factors = [0.8, 1.2]
+        self._perturb_factors = [0.8, 1.2]
     
     def train(self, epoches_to_train):
         data_dir = '/home/K8S/dataset/mnist'
@@ -171,8 +215,8 @@ class MNISTModel:
                     n_digits = int(n_digits)
             else:
                 n_digits = str(limit_min)[::-1].find('.')
-            min = val * self.perturb_factors[0]
-            max = val * self.perturb_factors[1]
+            min = val * self._perturb_factors[0]
+            max = val * self._perturb_factors[1]
             if min < limit_min:
                 min = limit_min
                 n_digits += 1
@@ -187,8 +231,8 @@ class MNISTModel:
             # Noted, some hp value can't exceed reasonable range
             if limit_min == limit_max:
                 limit_min = 0
-            min = int(np.floor(val * self.perturb_factors[0]))
-            max = int(np.ceil(val * self.perturb_factors[1]))
+            min = int(np.floor(val * self._perturb_factors[0]))
+            max = int(np.ceil(val * self._perturb_factors[1]))
             if min < limit_min:
                 min = limit_min
             if max > limit_max:

@@ -36,9 +36,7 @@ if rank == master_rank:
     end_time = time.time()
     print('Training takes {}'.format(datetime.timedelta(seconds=(end_time-start_time))))
 
-    cluster.report_plot_for_toy_model()
-    #cluster.report_accuracy_plot()
-
+    cluster.report_accuracy_plot()
     cluster.kill_all_workers()
 else:
     worker = TrainingWorker(comm, master_rank)
