@@ -194,6 +194,7 @@ class MNISTModel:
         self.accuracy = 0.0
 
         self.hparams['opt_case']['lr'] /= 1000.0
+
         self._perturb_factors = [0.8, 1.2]
     
     def train(self, epoches_to_train):

@@ -42,13 +42,10 @@ class PBTCluster:
                 all_hparams_need_training.append(generate_random_hparam())
 
         # for testing
-        '''with open('hparams.pickle', 'wb') as fp:
-            pickle.dump(all_hparams_need_training, fp)
+        #all_hparams_need_training = self.load_hparams_from_file('bad_hparams.pickle')
+        #self.pop_size = len(all_hparams_need_training)
 
-        with open('hparams.pickle', 'rb') as fp:
-            all_hparams_need_training = pickle.load(fp)'''
-
-        print('Population size = {}'.format(self.pop_size))
+        print('Population size = {}'.format(len(all_hparams_need_training)))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
         graphs_to_make = len(all_hparams_need_training)
 
@@ -70,6 +67,10 @@ class PBTCluster:
                 num_workers_sent += 1
         for req in reqs:
             req.wait()
+
+    def load_hparams_from_file(self, filename):
+        with open(filename, 'rb') as fp:
+            return pickle.load(fp)        
 
     def kill_all_workers(self):
         reqs = []
@@ -153,14 +154,12 @@ class PBTCluster:
     def copyfiles(self, src_dir, dest_dir):
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv' 
-                    and i != 'theta.csv' and not i.startswith('.nfs'):
+            if not os.path.isdir(path) and i != 'learning_curve.csv' and i != 'theta.csv' and not i.startswith('.nfs'):
                 print('Removing: {}'.format(path))
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
-            if not os.path.isdir(path)  and i != 'theta.csv' and i != 'learning_curve.csv' 
-                    and not i.startswith('events.out') and not i.startswith('.nfs'):
+            if not os.path.isdir(path)  and i != 'theta.csv' and i != 'learning_curve.csv' and not i.startswith('events.out') and not i.startswith('.nfs'):
                 print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
 

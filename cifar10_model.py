@@ -1,7 +1,6 @@
 import sys
 sys.path.insert(0, './resnet')
 
-#NOTE: tensorflow >= 1.10 required
 from resnet import cifar10_main
 
 class Cifar10Model:
@@ -24,11 +23,11 @@ class Cifar10Model:
 
         self.accuracy = 0.0
     
-    def train(self):
+    def train(self, num_epoch):
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
-            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, 1)
-        self.epoches_trained += 1
+            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, num_epoch)
+        self.epoches_trained += num_epoch
         return
 
     def perturb_hparams(self):
