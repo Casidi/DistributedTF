@@ -9,11 +9,10 @@ import time
 import datetime
 import tensorflow as tf
 
-
 from pbt_cluster import PBTCluster
 from constants import WorkerInstruction
 
-#TODO: switch models using import as
+# Available models
 from cifar10_model import Cifar10Model
 from toy_model import ToyModel
 from mnist_model import MNISTModel
