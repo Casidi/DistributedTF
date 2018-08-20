@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import os
 import csv
+import pickle
 
 from constants import generate_random_hparam
 import matplotlib
@@ -39,6 +40,12 @@ class PBTCluster:
         else:
             for i in range(self.pop_size):
                 all_hparams_need_training.append(generate_random_hparam())
+
+        with open('hparams.pickle', 'wb') as fp:
+            pickle.dump(all_hparams_need_training, fp)
+
+        '''with open('hparams.pickle', 'rb') as fp:
+            all_hparams_need_training = pickle.load(fp)'''
 
         print('Population size = {}'.format(self.pop_size))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
@@ -150,7 +157,7 @@ class PBTCluster:
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out'):
+            if not os.path.isdir(path) and i != 'learning_curve.csv' and not i.startswith('events.out') and not i.startswith('.nfs'):
                 print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
 
