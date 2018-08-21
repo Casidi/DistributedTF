@@ -13,6 +13,7 @@ class Cifar10Model:
         self.save_base_dir = save_base_dir
         self.epoches_trained = 0
         self.need_explore = False
+        self._perturb_factors = [0.8, 1.2]
 
         #for debugging
         self.hparams = {
