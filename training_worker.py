@@ -47,8 +47,8 @@ class TrainingWorker:
         for i in range(id_begin, cluster_id_end):
             hparam = hparam_list[i - id_begin]
             #new_graph = ToyModel(i, hparam, './savedata/model_')
-            #new_graph = MNISTModel(i, hparam, './savedata/model_')
-            new_graph = Cifar10Model(i, hparam, './savedata/model_')
+            new_graph = MNISTModel(i, hparam, './savedata/model_')
+            #new_graph = Cifar10Model(i, hparam, './savedata/model_')
             self.worker_graphs.append(new_graph)
 
     def train(self, num_epoches):

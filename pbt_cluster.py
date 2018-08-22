@@ -6,6 +6,7 @@ import subprocess
 import os
 import csv
 import pickle
+import json
 
 from constants import generate_random_hparam
 import matplotlib
@@ -70,7 +71,7 @@ class PBTCluster:
 
     def load_hparams_from_file(self, filename):
         with open(filename, 'rb') as fp:
-            return pickle.load(fp)        
+            return pickle.load(fp)
 
     def kill_all_workers(self):
         reqs = []
@@ -187,8 +188,30 @@ class PBTCluster:
                 data = self.comm.recv(source=i)
 
     def report_best_model(self):
-        #save the best HP and corresponding model id to json
-        return
+        reqs = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                reqs.append(self.comm.isend((WorkerInstruction.GET,), dest=i))
+        for req in reqs:
+            req.wait()
+
+        all_values = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                data = self.comm.recv(source=i)
+                all_values += data
+
+        all_values = sorted(all_values, key=lambda value: value[1])
+
+        report_dict = {}
+        report_dict['best_model_id'] = all_values[len(all_values) - 1][0]
+        report_dict['best_acc'] = float(all_values[len(all_values) - 1][1])
+        report_dict['best_hparams'] = all_values[len(all_values) - 1][2]
+        
+        filename = 'best_model.json'
+        with open(filename, 'w') as fp:
+            json.dump(report_dict, fp, indent=4)
+        print('Saving best model to {}'.format(filename))
         
     def report_plot_for_toy_model(self):
         csv_file_names = []
