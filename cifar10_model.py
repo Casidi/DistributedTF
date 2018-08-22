@@ -33,6 +33,7 @@ class Cifar10Model:
         self.accuracy = 0.0
     
     def train(self, num_epoch, total_epochs):
+        print('Training model {}'.format(self.cluster_id))
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
             cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, num_epoch, total_epochs)

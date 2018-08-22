@@ -162,7 +162,13 @@ def learning_rate_with_decay(
 
   def learning_rate_fn(global_step):
     global_step = tf.cast(global_step, tf.int32)
-    return tf.train.piecewise_constant(global_step, boundaries, vals)
+    if len(boundaries) == 0:
+        if len(vals) > 0:
+            return vals[0]
+        else:
+            return 0.01
+    else:
+        return tf.train.piecewise_constant(global_step, boundaries, vals)
 
   return learning_rate_fn
 
