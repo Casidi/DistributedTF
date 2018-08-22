@@ -199,10 +199,21 @@ class PBTCluster:
                 all_values += data
 
         all_values = sorted(all_values, key=lambda value: value[1])
+        report_list = []
+        for i in range(len(all_values)):
+            all_values[i][1] = float(all_values[i][1])
+            report_list.append({'model_id': all_values[i][0],
+                                'accuracy': all_values[i][1],
+                                'hparams': all_values[i][2]})
+
+        filename = 'savedata/all_models.json'
+        with open(filename, 'w') as fp:
+            json.dump(report_list, fp, indent=4, sort_keys=True)
+        print('Saving all models to {}'.format(filename))
 
         report_dict = {}
         report_dict['best_model_id'] = all_values[len(all_values) - 1][0]
-        report_dict['best_acc'] = float(all_values[len(all_values) - 1][1])
+        report_dict['best_acc'] = all_values[len(all_values) - 1][1]
         report_dict['best_hparams'] = all_values[len(all_values) - 1][2]
         
         filename = 'savedata/best_model.json'

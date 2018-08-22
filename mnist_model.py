@@ -200,7 +200,7 @@ class MNISTModel:
 
         self._perturb_factors = [0.8, 1.2]
     
-    def train(self, epoches_to_train):
+    def train(self, epoches_to_train, total_epochs):
         data_dir = '/home/K8S/dataset/mnist'
         step, self.accuracy = \
             main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)

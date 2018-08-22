@@ -83,7 +83,7 @@ class ToyModel:
 
         self.accuracy = 0.0
     
-    def train(self, epoches_to_train):
+    def train(self, epoches_to_train, total_epochs):
         data_dir = ''
         step, self.accuracy = \
             main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)

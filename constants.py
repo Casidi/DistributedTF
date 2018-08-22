@@ -37,7 +37,7 @@ def get_hp_range_definition():
                         'orthogonal', \
                         'he_init',
                         'None'],
-        'batch_size': [255]
+        'batch_size': [191]
     }
     return range_def_dict
     
@@ -89,6 +89,7 @@ def load_hp_space():
                     range_def['initializer']),
         'batch_size': hp.randint('batch_size', range_def['batch_size'][0])
         }
+    space['batch_size'] += 65
     return space
 
 def generate_random_hparam():
