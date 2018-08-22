@@ -20,7 +20,7 @@ if rank == master_rank:
     subprocess.call(['mkdir', 'savedata'])
 
     #The PBT case
-    cluster = PBTCluster(2, comm, master_rank)
+    cluster = PBTCluster(8, comm, master_rank)
     #The exploit only case
     #cluster = PBTCluster(2, comm, master_rank, do_explore=False)
     #The explore only case
@@ -30,7 +30,7 @@ if rank == master_rank:
 
     start_time = time.time()
 
-    cluster.train(2)
+    cluster.train(30)
     cluster.flush_all_instructions()
 
     end_time = time.time()
