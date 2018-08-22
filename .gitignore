@@ -4,3 +4,4 @@ resnet/model_*
 __pycache__/
 *.pyc
 *.pickle
+*.json

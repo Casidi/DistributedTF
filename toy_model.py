@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import random
 import os
 import csv
@@ -70,6 +71,9 @@ class ToyModel:
 
         self._perturb_factors = [0.8, 1.2]
 
+        if isinstance(self.hparams['batch_size'], np.ndarray):
+            self.hparams['batch_size'] = self.hparams['batch_size'].item()
+
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
             self.hparams['h_1'] = 1.0
@@ -83,7 +87,7 @@ class ToyModel:
         data_dir = ''
         step, self.accuracy = \
             main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)
-        self.epoches_trained += 1
+        self.epoches_trained += epoches_to_train
 
     def perturb_hparams(self):
         self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)

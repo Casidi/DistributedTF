@@ -195,6 +195,9 @@ class MNISTModel:
 
         self.hparams['opt_case']['lr'] /= 1000.0
 
+        if isinstance(self.hparams['batch_size'], np.ndarray):
+            self.hparams['batch_size'] = self.hparams['batch_size'].item()
+
         self._perturb_factors = [0.8, 1.2]
     
     def train(self, epoches_to_train):

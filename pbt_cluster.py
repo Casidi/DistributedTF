@@ -7,6 +7,8 @@ import os
 import csv
 import pickle
 import json
+import time
+import datetime
 
 from constants import generate_random_hparam
 import matplotlib
@@ -20,31 +22,21 @@ from constants import WorkerInstruction
 from constants import get_hp_range_definition, load_hp_space
 
 class PBTCluster:
-    def __init__(self, pop_size, comm, master_rank, do_exploit=True, do_explore=True):
+    def __init__(self, pop_size, comm, master_rank, epochs_per_round, do_exploit=True, do_explore=True):
         self.pop_size = pop_size
         self.comm = comm
         self.master_rank = master_rank
+        self.epochs_per_round = epochs_per_round
         self.do_exploit = do_exploit
-        self.do_explore = do_explore
-        self.epochs_per_round = 1
+        self.do_explore = do_explore        
 
         self.dispatch_hparams_to_workers()
 
     def dispatch_hparams_to_workers(self):
         all_hparams_need_training = []
 
-        # special condition for testing explore
-        if not self.do_exploit and self.do_explore:
-            hp = generate_random_hparam()
-            for i in range(self.pop_size):
-                all_hparams_need_training.append(hp)
-        else:
-            for i in range(self.pop_size):
-                all_hparams_need_training.append(generate_random_hparam())
-
-        # for testing
-        #all_hparams_need_training = self.load_hparams_from_file('bad_hparams.pickle')
-        #self.pop_size = len(all_hparams_need_training)
+        for i in range(self.pop_size):
+            all_hparams_need_training.append(generate_random_hparam())
 
         print('Population size = {}'.format(len(all_hparams_need_training)))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
@@ -63,15 +55,12 @@ class PBTCluster:
                 end = min(graphs_per_worker, graphs_to_make) + begin
                 hparams_for_the_worker = all_hparams_need_training[begin: end]
                 reqs.append(self.comm.isend((WorkerInstruction.ADD_GRAPHS,
-                                             hparams_for_the_worker, begin, is_explore_only), dest=i))
+                                             hparams_for_the_worker, 
+                                             begin, is_explore_only), dest=i))
                 graphs_to_make -= graphs_per_worker
                 num_workers_sent += 1
         for req in reqs:
             req.wait()
-
-    def load_hparams_from_file(self, filename):
-        with open(filename, 'rb') as fp:
-            return pickle.load(fp)
 
     def kill_all_workers(self):
         reqs = []
@@ -82,6 +71,7 @@ class PBTCluster:
             req.wait()
 
     def train(self, round_num):
+        start_time = time.time()
         for round in range(round_num):
             print('\nRound {}'.format(round))
 
@@ -92,13 +82,20 @@ class PBTCluster:
             for req in reqs:
                 req.wait()
 
-            if round == round_num-1: # No need to do exploit & explore for the last round.
-                return
+            # No need to do exploit & explore for the last round.
+            if round == round_num-1:
+                break
 
             if self.do_exploit:
                 self.exploit()
             if self.do_explore:
                 self.explore()
+
+            print('Elapsed time: {}'.format(datetime.timedelta(seconds=(time.time()-start_time))))
+
+        self.flush_all_instructions()
+        end_time = time.time()
+        print('Total elapsed time: {}'.format(datetime.timedelta(seconds=(end_time-start_time))))
 
     def exploit(self):
         reqs = []
@@ -159,12 +156,12 @@ class PBTCluster:
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv' and i != 'theta.csv' and not i.startswith('.nfs'):
-                print('Removing: {}'.format(path))
+                #print('Removing: {}'.format(path))
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
             path = os.path.join(src_dir, i)
             if not os.path.isdir(path)  and i != 'theta.csv' and i != 'learning_curve.csv' and not i.startswith('events.out') and not i.startswith('.nfs'):
-                print('Copying: {}'.format(path))
+                #print('Copying: {}'.format(path))
                 subprocess.call(['cp', path, dest_dir])
 
     def explore(self):
@@ -208,9 +205,9 @@ class PBTCluster:
         report_dict['best_acc'] = float(all_values[len(all_values) - 1][1])
         report_dict['best_hparams'] = all_values[len(all_values) - 1][2]
         
-        filename = 'best_model.json'
+        filename = 'savedata/best_model.json'
         with open(filename, 'w') as fp:
-            json.dump(report_dict, fp, indent=4)
+            json.dump(report_dict, fp, indent=4, sort_keys=True)
         print('Saving best model to {}'.format(filename))
         
     def report_plot_for_toy_model(self):
@@ -255,6 +252,7 @@ class PBTCluster:
         else:
             pyplot.title('Grid search')
             out_file_name = 'toy_grid_search.png'
+        out_file_name = os.path.join('savedata', out_file_name)
         pyplot.savefig(out_file_name)
         print('Writing results to {}'.format(out_file_name))
 
@@ -294,5 +292,6 @@ class PBTCluster:
         else:
             pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
+        out_file_name = os.path.join('savedata', out_file_name)
         pyplot.savefig(out_file_name)
         print('Writing results to {}'.format(out_file_name))

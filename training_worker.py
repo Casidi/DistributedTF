@@ -4,17 +4,14 @@ import subprocess
 
 from constants import WorkerInstruction
 
-from cifar10_model import Cifar10Model
-from toy_model import ToyModel
-from mnist_model import MNISTModel
-
 class TrainingWorker:
-    def __init__(self, comm, master_rank):
+    def __init__(self, comm, master_rank, target_model_class):
         self.worker_graphs = []
         self.is_expolore_only = False
         self.rank = comm.Get_rank()
         self.comm = comm
         self.master_rank = master_rank
+        self.target_model_class = target_model_class
 
     def main_loop(self):
         while True:
@@ -46,9 +43,7 @@ class TrainingWorker:
 
         for i in range(id_begin, cluster_id_end):
             hparam = hparam_list[i - id_begin]
-            #new_graph = ToyModel(i, hparam, './savedata/model_')
-            new_graph = MNISTModel(i, hparam, './savedata/model_')
-            #new_graph = Cifar10Model(i, hparam, './savedata/model_')
+            new_graph = self.target_model_class(i, hparam, './savedata/model_')
             self.worker_graphs.append(new_graph)
 
     def train(self, num_epoches):

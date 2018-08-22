@@ -28,7 +28,8 @@ class Cifar10Model:
         #if self.cluster_id == 0:
         #    self.hparams['opt_case']['lr'] = 100000
 
-        #self.hparams['batch_size'] = self.hparams['batch_size'].item()
+        if isinstance(self.hparams['batch_size'], np.ndarray):
+            self.hparams['batch_size'] = self.hparams['batch_size'].item()
         self.accuracy = 0.0
     
     def train(self, num_epoch):
