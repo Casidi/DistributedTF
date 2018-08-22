@@ -194,7 +194,7 @@ def cifar10_model_fn(features, labels, mode, params):
   decay_rates=[1,1]
 
   #decay_epochs = flags.FLAGS.train_epochs * flags.FLAGS.decay_steps / 100.0
-  decay_epochs = flags.FLAGS.total_epochs * params['decay_steps'] / 100.0
+  decay_epochs = flags.FLAGS.total_epochs * flags.FLAGS.decay_steps / 100.0
   
   if decay_epochs > 0.0: # Overwrite
     boundary_epochs_length = int(ceil(100 / flags.FLAGS.decay_steps)) - 1
@@ -285,7 +285,7 @@ def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_ep
         name="model_id", short_name="mid", default=model_id,
         help=help_wrap("The index of model in the population"))
   flags.DEFINE_integer(
-        name="total_epochs", short_name="te", default=train_epochs,
+        name="total_epochs", short_name="ttep", default=train_epochs,
         help=help_wrap("The total epochs the model will be trained"))
   
   flags_core.set_defaults(data_dir=data_dir,
