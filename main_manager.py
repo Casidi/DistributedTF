@@ -44,7 +44,9 @@ if rank == master_rank:
     #The grid search case
     #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False, do_explore=False)
 
+    cluster.dump_all_models_to_json('savedata/initial_hp.json')
     cluster.train(train_round)    
+    cluster.dump_all_models_to_json('savedata/final_hp.json')
 
     if target_model == ToyModel:
         cluster.report_plot_for_toy_model()

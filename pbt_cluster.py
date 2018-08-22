@@ -173,18 +173,10 @@ class PBTCluster:
             req.wait()
 
     def flush_all_instructions(self):
-        reqs = []
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                reqs.append(self.comm.isend((WorkerInstruction.GET,), dest=i))
-        for req in reqs:
-            req.wait()
+        # GET will block until all workers finish their instruction queues
+        self.get_all_values()
 
-        for i in range(0, self.comm.Get_size()):
-            if i != self.master_rank:
-                data = self.comm.recv(source=i)
-
-    def report_best_model(self):
+    def get_all_values(self):
         reqs = []
         for i in range(0, self.comm.Get_size()):
             if i != self.master_rank:
@@ -197,7 +189,10 @@ class PBTCluster:
             if i != self.master_rank:
                 data = self.comm.recv(source=i)
                 all_values += data
+        return all_values
 
+    def dump_all_models_to_json(self, filename):
+        all_values = self.get_all_values()
         all_values = sorted(all_values, key=lambda value: value[1])
         report_list = []
         for i in range(len(all_values)):
@@ -206,11 +201,14 @@ class PBTCluster:
                                 'accuracy': all_values[i][1],
                                 'hparams': all_values[i][2]})
 
-        filename = 'savedata/all_models.json'
         with open(filename, 'w') as fp:
             json.dump(report_list, fp, indent=4, sort_keys=True)
         print('Saving all models to {}'.format(filename))
 
+
+    def report_best_model(self):
+        all_values = self.get_all_values()
+        all_values = sorted(all_values, key=lambda value: value[1])
         report_dict = {}
         report_dict['best_model_id'] = all_values[len(all_values) - 1][0]
         report_dict['best_acc'] = all_values[len(all_values) - 1][1]
