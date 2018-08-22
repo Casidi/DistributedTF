@@ -32,7 +32,7 @@ class PBTCluster:
     def dispatch_hparams_to_workers(self):
         all_hparams_need_training = []
 
-        #special test condition for explore only case                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        # special condition for testing explore
         if not self.do_exploit and self.do_explore:
             hp = generate_random_hparam()
             for i in range(self.pop_size):
@@ -152,6 +152,9 @@ class PBTCluster:
             req.wait()
 
     def copyfiles(self, src_dir, dest_dir):
+        if src_dir == dest_dir:
+            print('Warning, src_dir and dest_dir are the same')
+            return
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
             if not os.path.isdir(path) and i != 'learning_curve.csv' and i != 'theta.csv' and not i.startswith('.nfs'):
@@ -240,6 +243,8 @@ class PBTCluster:
 
         all_acc = []
         for i in csv_file_names:
+            if not os.path.isfile(i):
+                continue
             acc = []
             with open(i) as csvfile:
                 rows = csv.DictReader(csvfile)

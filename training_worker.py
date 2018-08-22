@@ -1,5 +1,6 @@
 from __future__ import print_function
 import math
+import subprocess
 
 from constants import WorkerInstruction
 
@@ -52,11 +53,15 @@ class TrainingWorker:
 
     def train(self, num_epoches):
         for g in self.worker_graphs:
-            g.train(num_epoches)
-            print('Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
-            if math.isnan(g.get_accuracy()) == True:
+            try:
+                g.train(num_epoches)
+            	print('Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
+		if math.isnan(g.get_accuracy()) == True:
+	            self.worker_graphs.remove(g)
+            except:
                 self.worker_graphs.remove(g)
-                print('[WARNING] The calculated accuracy of the graph is NaN, the program has removed the graph.')
+                subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
+                print('Error occured , graph {} removed'.format(g.cluster_id))
 
     def get_all_values(self):
         vars_to_send = []

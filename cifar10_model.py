@@ -24,9 +24,11 @@ class Cifar10Model:
             'regularizer': 'l2_regularizer',
             'initializer': 'he_init',
             'batch_size': 128}
-        if self.cluster_id == 0:
-            self.hparams['opt_case']['lr'] = 10000
+        
+        #if self.cluster_id == 0:
+        #    self.hparams['opt_case']['lr'] = 100000
 
+        #self.hparams['batch_size'] = self.hparams['batch_size'].item()
         self.accuracy = 0.0
     
     def train(self, num_epoch):
