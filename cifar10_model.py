@@ -16,14 +16,14 @@ class Cifar10Model:
         self._perturb_factors = [0.8, 1.2]
 
         #for debugging
-        self.hparams = {
+        '''self.hparams = {
             'opt_case': {'lr': 0.1, 'optimizer': 'Momentum', 'momentum': 0.9},
             'decay_steps': 20,
             'decay_rate': 0.1,
             'weight_decay': 2e-4,
             'regularizer': 'l2_regularizer',
             'initializer': 'he_init',
-            'batch_size': 128}
+            'batch_size': 128}'''
         
         #if self.cluster_id == 0:
         #    self.hparams['opt_case']['lr'] = 100000

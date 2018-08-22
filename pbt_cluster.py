@@ -211,7 +211,7 @@ class PBTCluster:
         all_values = sorted(all_values, key=lambda value: value[1])
         report_dict = {}
         report_dict['best_model_id'] = all_values[len(all_values) - 1][0]
-        report_dict['best_acc'] = all_values[len(all_values) - 1][1]
+        report_dict['best_acc'] = float(all_values[len(all_values) - 1][1])
         report_dict['best_hparams'] = all_values[len(all_values) - 1][2]
         
         filename = 'savedata/best_model.json'

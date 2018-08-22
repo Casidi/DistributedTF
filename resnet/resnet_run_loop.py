@@ -374,7 +374,7 @@ def resnet_main(
   # intra_op_parallelism_threads. Note that we default to having
   # allow_soft_placement = True, which is required for multi-GPU and not
   # harmful for other modes.
-  gpu_memory_fraction = tf.GPUOptions(per_process_gpu_memory_fraction=0.5) # Xinyi add
+  gpu_memory_fraction = tf.GPUOptions(per_process_gpu_memory_fraction=0.45) # Xinyi add
   session_config = tf.ConfigProto(
       gpu_options=gpu_memory_fraction, # Xinyi add
       inter_op_parallelism_threads=flags_obj.inter_op_parallelism_threads,

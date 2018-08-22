@@ -23,7 +23,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 master_rank = 0
 train_round = 10
-population_size = 10
+population_size = 40
 epochs_per_round = 1
 #target_model = ToyModel
 #target_model = MNISTModel
