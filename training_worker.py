@@ -24,7 +24,8 @@ class TrainingWorker:
                 self.add_graphs(hparam_list, cluster_id_begin)
             elif inst == WorkerInstruction.TRAIN:
                 num_steps = data[1]
-                self.train(num_steps)
+                total_epochs = data[2]
+                self.train(num_steps, total_epochs)
             elif inst == WorkerInstruction.GET:
                 self.comm.send(self.get_all_values(), dest=self.master_rank)
             elif inst == WorkerInstruction.SET:
@@ -46,10 +47,10 @@ class TrainingWorker:
             new_graph = self.target_model_class(i, hparam, './savedata/model_')
             self.worker_graphs.append(new_graph)
 
-    def train(self, num_epoches):
+    def train(self, num_epoches, total_epochs):
         for g in self.worker_graphs:
             try:
-                g.train(num_epoches)
+                g.train(num_epoches, total_epochs)
             	print('Graph {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
 		if math.isnan(g.get_accuracy()) == True:
 	            self.worker_graphs.remove(g)

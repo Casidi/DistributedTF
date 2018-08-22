@@ -193,7 +193,8 @@ def cifar10_model_fn(features, labels, mode, params):
   boundary_epochs=[flags.FLAGS.train_epochs] 
   decay_rates=[1,1]
 
-  decay_epochs = flags.FLAGS.train_epochs * flags.FLAGS.decay_steps / 100.0
+  #decay_epochs = flags.FLAGS.train_epochs * flags.FLAGS.decay_steps / 100.0
+  decay_epochs = flags.FLAGS.total_epochs * params['decay_steps'] / 100.0
   
   if decay_epochs > 0.0: # Overwrite
     boundary_epochs_length = int(ceil(100 / flags.FLAGS.decay_steps)) - 1
@@ -237,7 +238,7 @@ def cifar10_model_fn(features, labels, mode, params):
   )
 
 
-def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs): # Xinyi modified
+def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs): # Xinyi modified
   resnet_run_loop.define_resnet_flags()
   flags.adopt_module_key_flags(resnet_run_loop)
   
@@ -283,6 +284,9 @@ def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs): # Xinyi
   flags.DEFINE_integer(
         name="model_id", short_name="mid", default=model_id,
         help=help_wrap("The index of model in the population"))
+  flags.DEFINE_integer(
+        name="total_epochs", short_name="te", default=train_epochs,
+        help=help_wrap("The total epochs the model will be trained"))
   
   flags_core.set_defaults(data_dir=data_dir,
                           model_dir=model_dir,
@@ -313,13 +317,13 @@ def start(_): # Xinyi modified
     return eval_accuracy, flags.FLAGS.model_id
 
 import sys
-def main(hp, model_id, save_base_dir, data_dir, train_epochs): # Xinyi modified
+def main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs): # Xinyi modified
   tf.logging.set_verbosity(tf.logging.ERROR)
   model_dir = save_base_dir + str(model_id)
   
   for name in list(flags.FLAGS):
     delattr(flags.FLAGS, name)
-  define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs)
+  define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs)
   
   absl_app.parse_flags_with_usage(sys.argv)
   return start(0)
@@ -342,4 +346,4 @@ if __name__ == '__main__':
   train_epochs = 250
   
   print('Return {}'.format( \
-      main(hp, model_id, save_base_dir, data_dir, train_epochs))) # Xinyi modified
+      main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs=train_epochs))) # Xinyi modified

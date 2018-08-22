@@ -16,10 +16,8 @@ class MNISTDeepModelTestCase(unittest.TestCase):
         self.save_base_dir = './savedata/model_'
         self.data_dir = '/home/K8S/dataset/mnist'
 
-        subprocess.call(['rm', '-rf', './savedata/model_*'])
-
-    def tearDown(self):
-        subprocess.call(['rm', '-rf', './savedata/model_*'])
+        subprocess.call(['rm', '-rf', 'savedata'])
+        subprocess.call(['mkdir', 'savedata'])
 
     def test_basic(self):
         model = MNISTModel(0, generate_random_hparam())

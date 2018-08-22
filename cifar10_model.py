@@ -32,10 +32,10 @@ class Cifar10Model:
             self.hparams['batch_size'] = self.hparams['batch_size'].item()
         self.accuracy = 0.0
     
-    def train(self, num_epoch):
+    def train(self, num_epoch, total_epochs):
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
-            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, num_epoch)
+            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, num_epoch, total_epochs)
         self.epoches_trained += num_epoch
         return
 

@@ -78,7 +78,7 @@ class PBTCluster:
             reqs = []
             for i in range(0, self.comm.Get_size()):
                 if i != self.master_rank:
-                    reqs.append(self.comm.isend((WorkerInstruction.TRAIN, self.epochs_per_round), dest=i))
+                    reqs.append(self.comm.isend((WorkerInstruction.TRAIN, self.epochs_per_round, self.epochs_per_round*round_num), dest=i))
             for req in reqs:
                 req.wait()
 
