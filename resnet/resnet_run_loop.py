@@ -273,7 +273,7 @@ def resnet_model_fn(features, labels, mode, model_class,
     tf.summary.scalar('learning_rate', learning_rate)
 
     optimizer = solver_func(learning_rate) # Xinyi modified
-    #print('Xinyi test after optimizer {}'.format(flags.FLAGS.optimizer))
+    print('Xinyi test after optimizer {}'.format(flags.FLAGS.optimizer))
 
     if loss_scale != 1:
       # When computing fp16 gradients, often intermediate tensor values are
@@ -374,13 +374,19 @@ def resnet_main(
   # intra_op_parallelism_threads. Note that we default to having
   # allow_soft_placement = True, which is required for multi-GPU and not
   # harmful for other modes.
+  gpu_memory_fraction = tf.GPUOptions(per_process_gpu_memory_fraction=0.5) # Xinyi add
   session_config = tf.ConfigProto(
+      gpu_options=gpu_memory_fraction, # Xinyi add
       inter_op_parallelism_threads=flags_obj.inter_op_parallelism_threads,
       intra_op_parallelism_threads=flags_obj.intra_op_parallelism_threads,
       allow_soft_placement=True)
-  session_config.gpu_options.allow_growth = True
 
-  run_config = tf.estimator.RunConfig(session_config=session_config)
+  distribution_strategy = distribution_utils.get_distribution_strategy(
+      # flags_core.get_num_gpus(flags_obj), flags_obj.all_reduce_alg)
+      1, flags_obj.all_reduce_alg) # Xinyi modified, get_num_gpus() will occupy all GPUs
+  
+  run_config = tf.estimator.RunConfig(
+      train_distribute=distribution_strategy, session_config=session_config)
 
   classifier = tf.estimator.Estimator(
       model_fn=model_function, model_dir=flags_obj.model_dir, config=run_config,
@@ -417,15 +423,18 @@ def resnet_main(
     return input_function(
         is_training=True, data_dir=flags_obj.data_dir,
         batch_size=distribution_utils.per_device_batch_size(
-            flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+            #flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+            flags_obj.batch_size, 1), # Xinyi modified, get_num_gpus() will occupy all GPUs
         num_epochs=flags_obj.epochs_between_evals,
-        num_gpus=flags_core.get_num_gpus(flags_obj))
+        #num_gpus=flags_core.get_num_gpus(flags_obj))
+        num_gpus=1) # Xinyi modified, get_num_gpus() will occupy all GPUs
 
   def input_fn_eval():
     return input_function(
         is_training=False, data_dir=flags_obj.data_dir,
         batch_size=distribution_utils.per_device_batch_size(
-            flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+            #flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+            flags_obj.batch_size, 1), # Xinyi modified, get_num_gpus() will occupy all GPUs
         num_epochs=1)
 
   total_training_cycle = (flags_obj.train_epochs //
@@ -453,13 +462,17 @@ def resnet_main(
     # Xinyi add, writing accuracy after every training epoch
     filename = os.path.join(flags.FLAGS.model_dir,'learning_curve.csv')
     file_exists = os.path.isfile(filename)
-    fields=['global_step','eval_accuracy']
+    fields=['epochs','eval_accuracy', 'optimizer', 'learning_rate', 'decay_rate', 'decay_steps']
     with open(filename, 'a') as csvfile:
       writer = csv.DictWriter(csvfile, fieldnames=fields)
       if not file_exists:
         writer.writeheader()
-      writer.writerow({'global_step': eval_results['global_step'], \
-          'eval_accuracy': eval_results['accuracy']})
+      writer.writerow({'epochs': cycle_index+1,      \
+          'eval_accuracy': eval_results['accuracy'], \
+          'optimizer': flags.FLAGS.optimizer,        \
+          'learning_rate': flags.FLAGS.learning_rate,
+          'decay_rate':flags.FLAGS.decay_rate,
+          'decay_steps':flags.FLAGS.decay_steps})
 
     if model_helpers.past_stop_threshold(
         flags_obj.stop_threshold, eval_results['accuracy']):
