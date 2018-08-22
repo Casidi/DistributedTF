@@ -25,7 +25,7 @@ class PBTCluster:
         self.master_rank = master_rank
         self.do_exploit = do_exploit
         self.do_explore = do_explore
-        self.epochs_per_round = 4
+        self.epochs_per_round = 1
 
         self.dispatch_hparams_to_workers()
 
@@ -250,7 +250,7 @@ class PBTCluster:
         for i in all_acc:
             pyplot.plot(list(zip(*i))[0], list(zip(*i))[1])
 
-        pyplot.xlabel(r'Train step')
+        pyplot.xlabel(r'Train epochs')
         pyplot.ylabel(r'Accuracy')
         pyplot.grid(True)
 

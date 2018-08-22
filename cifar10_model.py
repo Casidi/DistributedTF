@@ -24,6 +24,8 @@ class Cifar10Model:
             'regularizer': 'l2_regularizer',
             'initializer': 'he_init',
             'batch_size': 128}
+        if self.cluster_id == 0:
+            self.hparams['opt_case']['lr'] = 10000
 
         self.accuracy = 0.0
     
