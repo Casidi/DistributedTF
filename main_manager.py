@@ -24,10 +24,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 master_rank = 0
 train_round = 10
 population_size = 10
-epochs_per_round = 4
-target_model = ToyModel
+epochs_per_round = 1
+#target_model = ToyModel
 #target_model = MNISTModel
-#target_model = Cifar10Model
+target_model = Cifar10Model
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
