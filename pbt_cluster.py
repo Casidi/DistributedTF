@@ -280,7 +280,7 @@ class PBTCluster:
             with open(i) as csvfile:
                 rows = csv.DictReader(csvfile)
                 for row in rows:
-                    acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
+                    acc.append([int(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
             all_acc.append(acc)
 
         pyplot.figure()
@@ -321,7 +321,7 @@ class PBTCluster:
             with open(i) as csvfile:
                 rows = csv.DictReader(csvfile)
                 for row in rows:
-                    acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[3]])])
+                    acc.append([int(row[rows.fieldnames[0]]), float(row[rows.fieldnames[3]])])
             all_lr.append(acc)
 
         pyplot.figure()

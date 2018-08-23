@@ -30,7 +30,8 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 
         results_to_log = []
         for i in range(train_epochs):
-            results_to_log.append(sess.run([theta_0, theta_1, global_step, obj]))
+            results_to_log.append(sess.run([theta_0, theta_1, global_step, obj]) 
+                                    + [hp['opt_case']['optimizer'], hp['opt_case']['lr']])
             sess.run(train_op)
 
         if not os.path.isdir(save_dir):
@@ -50,14 +51,14 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 
         filename = os.path.join(save_dir,'learning_curve.csv')
         file_exists = os.path.isfile(filename)
-        fields=['global_step','accuracy']
+        fields=['global_step','accuracy', 'optimizer', 'lr']
         with open(filename, 'a') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fields)
             if not file_exists:
                 writer.writeheader()
 
             for i in results_to_log:
-                writer.writerow({'global_step': i[2], 'accuracy': i[3]})
+                writer.writerow({'global_step': i[2], 'accuracy': i[3], 'optimizer':i[4], 'lr': i[5]})
         
         return sess.run([global_step, obj])
 

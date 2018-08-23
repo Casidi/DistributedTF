@@ -22,7 +22,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # target_model = ToyModel
 
 master_rank = 0
-train_round = 10
+train_round = 5
 population_size = 4
 epochs_per_round = 1
 #target_model = ToyModel

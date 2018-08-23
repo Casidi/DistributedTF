@@ -168,18 +168,18 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
             num_epochs=1,
             shuffle=False)
         eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
-        results_to_log.append((eval_results['global_step'], eval_results['accuracy']))
+        results_to_log.append((eval_results['global_step'], eval_results['accuracy'], hp['opt_case']['optimizer'], hp['opt_case']['lr']))
 
     filename = os.path.join(save_dir,'learning_curve.csv')
     file_exists = os.path.isfile(filename)
-    fields=['global_step','eval_accuracy']
+    fields=['global_step','eval_accuracy', 'optimizer', 'lr']
     with open(filename, 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fields)
         if not file_exists:
             writer.writeheader()
         
         for i in results_to_log:
-            writer.writerow({'global_step': i[0], 'eval_accuracy': i[1]})
+            writer.writerow({'global_step': i[0], 'eval_accuracy': i[1], 'optimizer':i[2], 'lr':i[3]})
 
     return eval_results['global_step'], eval_results['accuracy']
 
@@ -241,7 +241,11 @@ class MNISTModel:
                 min = limit_min
             if max > limit_max:
                 max = limit_max
-            return random.randint(min, max)
+            
+            if min >= max:
+                return min
+            else:
+                return random.randint(min, max)
 
         range_def = get_hp_range_definition()        
         for key, value in self.hparams.iteritems():
