@@ -239,6 +239,7 @@ class PBTCluster:
         x, y = np.meshgrid(linspace_x, linspace_y)
         z = 1.2 - (x ** 2 + y ** 2)
 
+        pyplot.figure()
         pyplot.xlabel(r'$\theta_0$')
         pyplot.ylabel(r'$\theta_1$')
         pyplot.xlim(0, 1)
@@ -282,6 +283,7 @@ class PBTCluster:
                     acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
             all_acc.append(acc)
 
+        pyplot.figure()
         for i in all_acc:
             pyplot.plot(list(zip(*i))[0], list(zip(*i))[1])
 
@@ -301,6 +303,47 @@ class PBTCluster:
         else:
             pyplot.title('Grid search')
             out_file_name = 'acc_grid_search.png'
+        out_file_name = os.path.join('savedata', out_file_name)
+        pyplot.savefig(out_file_name)
+        print('Writing results to {}'.format(out_file_name))
+
+    def report_lr_plot(self):
+        csv_file_names = []
+        for i in os.listdir('./savedata'):
+            if i.startswith('model_'):
+                csv_file_names.append(os.path.join('./savedata', i, 'learning_curve.csv'))
+
+        all_lr = []
+        for i in csv_file_names:
+            if not os.path.isfile(i):
+                continue
+            acc = []
+            with open(i) as csvfile:
+                rows = csv.DictReader(csvfile)
+                for row in rows:
+                    acc.append([float(row[rows.fieldnames[0]]), float(row[rows.fieldnames[3]])])
+            all_lr.append(acc)
+
+        pyplot.figure()
+        for i in all_lr:
+            pyplot.plot(list(zip(*i))[0], list(zip(*i))[1])
+
+        pyplot.xlabel(r'Train epochs')
+        pyplot.ylabel(r'Learning rate')
+        pyplot.grid(True)
+
+        if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
+            out_file_name = 'lr_PBT.png'
+        elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
+            out_file_name = 'lr_exploit_only.png'
+        elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
+            out_file_name = 'lr_explore_only.png'
+        else:
+            pyplot.title('Grid search')
+            out_file_name = 'lr_grid_search.png'
         out_file_name = os.path.join('savedata', out_file_name)
         pyplot.savefig(out_file_name)
         print('Writing results to {}'.format(out_file_name))
