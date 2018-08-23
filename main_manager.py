@@ -15,19 +15,19 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 #configurations
 #The parameters to generate toy model graphs
-# master_rank = 0
-# train_round = 30
-# population_size = 2
-# epochs_per_round = 4
-# target_model = ToyModel
-
 master_rank = 0
-train_round = 5
-population_size = 4
-epochs_per_round = 1
-#target_model = ToyModel
-#target_model = MNISTModel
-target_model = Cifar10Model
+train_round = 30
+population_size = 2
+epochs_per_round = 4
+target_model = ToyModel
+
+# master_rank = 0
+# train_round = 5
+# population_size = 4
+# epochs_per_round = 1
+# #target_model = ToyModel
+# #target_model = MNISTModel
+# target_model = Cifar10Model
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -48,11 +48,11 @@ if rank == master_rank:
     cluster.train(train_round)    
     cluster.dump_all_models_to_json('savedata/final_hp.json')
 
-    if target_model == ToyModel:
-        cluster.report_plot_for_toy_model()
-    cluster.report_accuracy_plot()
-    cluster.report_lr_plot()
-    cluster.report_best_model()
+    #if target_model == ToyModel:
+    #    cluster.report_plot_for_toy_model()
+    #cluster.report_accuracy_plot()
+    #cluster.report_lr_plot()
+    #cluster.report_best_model()
     cluster.kill_all_workers()
 else:
     worker = TrainingWorker(comm, master_rank, target_model_class=target_model)
