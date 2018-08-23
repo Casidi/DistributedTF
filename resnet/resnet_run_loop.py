@@ -380,7 +380,7 @@ def resnet_main(
   # intra_op_parallelism_threads. Note that we default to having
   # allow_soft_placement = True, which is required for multi-GPU and not
   # harmful for other modes.
-  gpu_memory_fraction = tf.GPUOptions(per_process_gpu_memory_fraction=0.45) # Xinyi add
+  gpu_memory_fraction = tf.GPUOptions(per_process_gpu_memory_fraction=0.4) # Xinyi add
   session_config = tf.ConfigProto(
       gpu_options=gpu_memory_fraction, # Xinyi add
       inter_op_parallelism_threads=flags_obj.inter_op_parallelism_threads,
@@ -468,17 +468,39 @@ def resnet_main(
     # Xinyi add, writing accuracy after every training epoch
     filename = os.path.join(flags.FLAGS.model_dir,'learning_curve.csv')
     file_exists = os.path.isfile(filename)
-    fields=['epochs','eval_accuracy', 'optimizer', 'learning_rate', 'decay_rate', 'decay_steps']
+    steps_per_epoch = int(50000/flags.FLAGS.batch_size)
+    fields=['epochs', 'eval_accuracy',
+            'optimizer', 'learning_rate',
+            'decay_rate', 'decay_steps',
+            'initializer', 'regularizer',
+            'weight_decay','batch_size',
+            'model_id']
+    csv_data={
+            'epochs':int(eval_results['global_step']/steps_per_epoch),
+            'eval_accuracy': eval_results['accuracy'],
+            'optimizer': flags.FLAGS.optimizer,
+            'learning_rate': flags.FLAGS.learning_rate,
+            'decay_rate':flags.FLAGS.decay_rate,
+            'decay_steps':flags.FLAGS.decay_steps,
+            'initializer':flags.FLAGS.initializer,
+            'regularizer':flags.FLAGS.regularizer,
+            'weight_decay':flags.FLAGS.weight_decay,
+            'batch_size':flags.FLAGS.batch_size,
+            'model_id':flags.FLAGS.model_id}
+    
+    if flags.FLAGS.optimizer=='Momentum' \
+        or flags.FLAGS.optimizer=='RMSProp':
+        fields.append('momentum')
+        csv_data['momentum'] = flags.FLAGS.momentum
+    if flags.FLAGS.optimizer=='RMSProp':
+        fields.append('grad_decay')
+        csv_data['grad_decay'] = flags.FLAGS.grad_decay
+    
     with open(filename, 'a') as csvfile:
       writer = csv.DictWriter(csvfile, fieldnames=fields)
       if not file_exists:
         writer.writeheader()
-      writer.writerow({'epochs': cycle_index+1,      \
-          'eval_accuracy': eval_results['accuracy'], \
-          'optimizer': flags.FLAGS.optimizer,        \
-          'learning_rate': flags.FLAGS.learning_rate,
-          'decay_rate':flags.FLAGS.decay_rate,
-          'decay_steps':flags.FLAGS.decay_steps})
+      writer.writerow(csv_data)
 
     if model_helpers.past_stop_threshold(
         flags_obj.stop_threshold, eval_results['accuracy']):
@@ -497,7 +519,7 @@ def resnet_main(
 def define_resnet_flags(resnet_size_choices=None):
   """Add flags and validators for ResNet."""
   flags_core.define_base()
-  flags_core.define_performance(num_parallel_calls=False)
+  flags_core.define_performance(num_parallel_calls=False) # Xinyi modified
   flags_core.define_image()
   flags_core.define_benchmark()
   flags.adopt_module_key_flags(flags_core)

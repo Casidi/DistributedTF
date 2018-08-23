@@ -190,17 +190,15 @@ def cifar10_model_fn(features, labels, mode, params):
   features = tf.reshape(features, [-1, _HEIGHT, _WIDTH, _NUM_CHANNELS])
 
   # Xinyi add, by default turnning off learning rate decay
-  boundary_epochs=[flags.FLAGS.train_epochs] 
+  boundary_epochs=[250] # Default 250 epoch training
   decay_rates=[1,1]
 
-  #decay_epochs = flags.FLAGS.train_epochs * flags.FLAGS.decay_steps / 100.0
-  decay_epochs = flags.FLAGS.total_epochs * flags.FLAGS.decay_steps / 100.0
-  
-  if decay_epochs > 0.0: # Overwrite
+  if flags.FLAGS.decay_steps !=0 and  flags.FLAGS.decay_steps != 100: # Overwrite
     boundary_epochs_length = int(ceil(100 / flags.FLAGS.decay_steps)) - 1
     boundary_epochs = []
     decay_rates = [1]
-    for i in xrange(boundary_epochs_length ):
+    decay_epochs = 250 * flags.FLAGS.decay_steps / 100.0
+    for i in xrange(boundary_epochs_length):
       decay_rates.append(flags.FLAGS.decay_rate * decay_rates[i])
       boundary_epochs.append(decay_epochs*(i+1))
   
@@ -320,14 +318,14 @@ import sys
 def main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs): # Xinyi modified
   tf.logging.set_verbosity(tf.logging.ERROR)
   model_dir = save_base_dir + str(model_id)
-  
+
   for name in list(flags.FLAGS):
     delattr(flags.FLAGS, name)
   define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs)
   
   absl_app.parse_flags_with_usage(sys.argv)
   return start(0)
-  #return absl_app.run(start)
+
   
     
 if __name__ == '__main__':
@@ -343,7 +341,7 @@ if __name__ == '__main__':
   model_id = 0
   save_base_dir = './model_'
   data_dir = '/home/K8S/dataset/cifar10/'
-  train_epochs = 250
+  train_epochs = 1
   
   print('Return {}'.format( \
-      main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs=train_epochs))) # Xinyi modified
+      main(hp, model_id, save_base_dir, data_dir, train_epochs))) # Xinyi modified
