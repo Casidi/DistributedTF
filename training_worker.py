@@ -49,19 +49,19 @@ class TrainingWorker:
 
     def train(self, num_epoches, total_epochs):
         for g in self.worker_graphs:
-            g.train(num_epoches, total_epochs)
-            print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
-            '''try:
+            #g.train(num_epoches, total_epochs)
+            #print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
+            try:
                 g.train(num_epoches, total_epochs)
             	print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
-		if math.isnan(g.get_accuracy()) == True:
-	            self.worker_graphs.remove(g)
-			subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
-			print('Error occured , graph {} removed'.format(g.cluster_id))
+		        if math.isnan(g.get_accuracy()) == True:
+	                self.worker_graphs.remove(g)
+			        subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
+			        print('Error occured , graph {} removed'.format(g.cluster_id))
             except:
                 self.worker_graphs.remove(g)
                 subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
-                print('Error occured , graph {} removed'.format(g.cluster_id))'''
+                print('Error occured , graph {} removed'.format(g.cluster_id))
 
     def get_all_values(self):
         vars_to_send = []
