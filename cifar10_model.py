@@ -36,7 +36,9 @@ class Cifar10Model:
         print('Training model {}'.format(self.cluster_id))
         data_dir = '/home/K8S/dataset/cifar10'
         self.accuracy, model_id = \
-            cifar10_main.main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, num_epoch, total_epochs)
+            cifar10_main.main(self.hparams, self.cluster_id, 
+                    self.save_base_dir, data_dir, 
+                    num_epoch, total_epochs, self.epoches_trained)
         self.epoches_trained += num_epoch
         return
 

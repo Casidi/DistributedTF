@@ -476,7 +476,7 @@ def resnet_main(
             'weight_decay','batch_size',
             'model_id']
     csv_data={
-            'epochs':int(eval_results['global_step']/steps_per_epoch),
+            'epochs': flags.FLAGS.epoch_index,
             'eval_accuracy': eval_results['accuracy'],
             'optimizer': flags.FLAGS.optimizer,
             'learning_rate': flags.FLAGS.learning_rate,

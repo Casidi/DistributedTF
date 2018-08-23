@@ -236,7 +236,7 @@ def cifar10_model_fn(features, labels, mode, params):
   )
 
 
-def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs): # Xinyi modified
+def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs, epoch_index): # Xinyi modified
   resnet_run_loop.define_resnet_flags()
   flags.adopt_module_key_flags(resnet_run_loop)
   
@@ -285,6 +285,9 @@ def define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_ep
   flags.DEFINE_integer(
         name="total_epochs", short_name="ttep", default=train_epochs,
         help=help_wrap("The total epochs the model will be trained"))
+  flags.DEFINE_integer(
+        name="epoch_index", short_name="epi", default=epoch_index,
+        help=help_wrap("The epoch index write to csv."))
   
   flags_core.set_defaults(data_dir=data_dir,
                           model_dir=model_dir,
@@ -315,13 +318,13 @@ def start(_): # Xinyi modified
     return eval_accuracy, flags.FLAGS.model_id
 
 import sys
-def main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs): # Xinyi modified
+def main(hp, model_id, save_base_dir, data_dir, train_epochs, total_epochs, epoch_index): # Xinyi modified
   tf.logging.set_verbosity(tf.logging.ERROR)
   model_dir = save_base_dir + str(model_id)
 
   for name in list(flags.FLAGS):
     delattr(flags.FLAGS, name)
-  define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs)
+  define_cifar_flags(hp, model_id, model_dir, data_dir, train_epochs, total_epochs, epoch_index)
   
   absl_app.parse_flags_with_usage(sys.argv)
   return start(0)
