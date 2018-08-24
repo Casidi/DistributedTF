@@ -102,12 +102,13 @@ class ToyModel:
 
     #overwrite the copying of hparam
     def set_values(self, values):
-        if self.cluster_id == 0:
+        '''if self.cluster_id == 0:
             self.hparams['h_0'] = 0.0
             self.hparams['h_1'] = 1.0
         else:
             self.hparams['h_0'] = 1.0
-            self.hparams['h_1'] = 0.0
+            self.hparams['h_1'] = 0.0'''
+        self.hparams = values[2]
 
     def _perturb_float(self, val, limit_min, limit_max):
         #NOTE: some hp value can't exceed reasonable range

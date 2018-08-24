@@ -36,20 +36,20 @@ if rank == master_rank:
     subprocess.call(['mkdir', 'savedata'])
 
     #The PBT case
-    cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round)
+    #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round)
     #The exploit only case
     #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_explore=False)
     #The explore only case
     #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False)
     #The grid search case
-    #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False, do_explore=False)
+    cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False, do_explore=False)
 
     cluster.dump_all_models_to_json('savedata/initial_hp.json')
     cluster.train(train_round)    
     cluster.dump_all_models_to_json('savedata/final_hp.json')
 
-    #if target_model == ToyModel:
-    #    cluster.report_plot_for_toy_model()
+    if target_model == ToyModel:
+        cluster.report_plot_for_toy_model()
     #cluster.report_accuracy_plot()
     #cluster.report_lr_plot()
     #cluster.report_best_model()
