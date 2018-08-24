@@ -1,8 +1,8 @@
 import tensorflow as tf
-import numpy as np
-import random
 import os
 import csv
+
+from model_base import ModelBase
 
 def main(hp, model_id, save_base_dir, data_dir, train_epochs):
     save_dir = save_base_dir + str(model_id)
@@ -62,18 +62,9 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
         
         return sess.run([global_step, obj])
 
-class ToyModel:
+class ToyModel(ModelBase):
     def __init__(self, cluster_id, hparams, save_base_dir):
-        self.cluster_id = cluster_id
-        self.hparams = hparams
-        self.save_base_dir = save_base_dir
-        self.epoches_trained = 0
-        self.need_explore = False
-
-        self._perturb_factors = [0.8, 1.2]
-
-        if isinstance(self.hparams['batch_size'], np.ndarray):
-            self.hparams['batch_size'] = self.hparams['batch_size'].item()
+        super(ToyModel, self).__init__(cluster_id, hparams, save_base_dir)
 
         if cluster_id == 0:
             self.hparams['h_0'] = 0.0
@@ -81,24 +72,12 @@ class ToyModel:
         else:
             self.hparams['h_0'] = 1.0
             self.hparams['h_1'] = 0.0
-
-        self.accuracy = 0.0
     
     def train(self, epoches_to_train, total_epochs):
         data_dir = ''
         step, self.accuracy = \
             main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)
         self.epoches_trained += epoches_to_train
-
-    def perturb_hparams(self):
-        self.hparams['h_0'] = self._perturb_float(self.hparams['h_0'], 0.0, 1.0)
-        self.hparams['h_1'] = self._perturb_float(self.hparams['h_1'], 0.0, 1.0)
-
-    def get_accuracy(self):
-        return self.accuracy
-
-    def get_values(self):
-        return [self.cluster_id, self.get_accuracy(), self.hparams]
 
     #overwrite the copying of hparam
     def set_values(self, values):
@@ -108,26 +87,3 @@ class ToyModel:
         else:
             self.hparams['h_0'] = 1.0
             self.hparams['h_1'] = 0.0
-
-    def _perturb_float(self, val, limit_min, limit_max):
-        #NOTE: some hp value can't exceed reasonable range
-        float_string = str(limit_min)
-        if 'e' in float_string:
-            _, n_digits = float_string.split('e')
-            if '-' in n_digits:
-                n_digits = int(n_digits)*-1
-            else:
-                n_digits = int(n_digits)
-        else:
-            n_digits = str(limit_min)[::-1].find('.')
-        min = val * self._perturb_factors[0]
-        max = val * self._perturb_factors[1]
-        if min < limit_min:
-            min = limit_min
-            n_digits += 1
-        if max > limit_max:
-            max = limit_max
-        val = random.uniform(min, max)
-        val = round(val, n_digits)
-        
-        return val

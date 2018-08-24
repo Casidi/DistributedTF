@@ -13,18 +13,22 @@ from mnist_model import MNISTModel
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-#configurations
-#The parameters to generate toy model graphs
+# configurations
+# The parameters to generate toy model graphs
 # master_rank = 0
 # train_round = 30
 # population_size = 2
 # epochs_per_round = 4
 # target_model = ToyModel
+# do_exploit = True
+# do_explore = True
 
 master_rank = 0
 train_round = 5
 population_size = 4
 epochs_per_round = 1
+do_exploit = True
+do_explore = True
 #target_model = ToyModel
 #target_model = MNISTModel
 target_model = Cifar10Model
@@ -35,14 +39,9 @@ if rank == master_rank:
     subprocess.call(['rm', '-rf', 'savedata'])
     subprocess.call(['mkdir', 'savedata'])
 
-    #The PBT case
-    cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round)
-    #The exploit only case
-    #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_explore=False)
-    #The explore only case
-    #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False)
-    #The grid search case
-    #cluster = PBTCluster(population_size, comm, master_rank, epochs_per_round=epochs_per_round, do_exploit=False, do_explore=False)
+    cluster = PBTCluster(population_size, comm, master_rank, 
+                    epochs_per_round=epochs_per_round, 
+                    do_exploit=do_exploit, do_explore=do_explore)
 
     cluster.dump_all_models_to_json('savedata/initial_hp.json')
     cluster.train(train_round)    
