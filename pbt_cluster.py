@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import os
 import csv
-import pickle
 import json
 import time
 import datetime
@@ -14,7 +13,6 @@ from constants import generate_random_hparam
 import matplotlib
 matplotlib.use('Agg')  # Force matplotlib to not use any Xwindows backend.
 from matplotlib import pyplot
-import matplotlib.ticker as ticker
 import numpy as np
 import six
 

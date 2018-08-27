@@ -1,6 +1,4 @@
-import sys
 import os
-sys.path.insert(0, './mnist_deep')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 from mnist_model import MNISTModel
@@ -20,11 +18,11 @@ class MNISTDeepModelTestCase(unittest.TestCase):
         subprocess.call(['mkdir', 'savedata'])
 
     def test_basic(self):
-        model = MNISTModel(0, generate_random_hparam())
+        model = MNISTModel(0, generate_random_hparam(), 'savedata/model_')
         
     def test_perturb_hparams(self):
-        model = MNISTModel(0, generate_random_hparam())
-        model.perturb_hparams_and_update_graph()
+        model = MNISTModel(0, generate_random_hparam(), 'savedata/model_')
+        model.perturb_hparams()
 
 unittest.main(verbosity=2)
 

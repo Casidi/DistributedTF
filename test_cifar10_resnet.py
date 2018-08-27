@@ -24,12 +24,12 @@ class Cifar10ModelTestCase(unittest.TestCase):
         subprocess.call(['mkdir', 'savedata'])
 
     def test_seperate_calls_to_main(self):
-        total_epoches = 10
+        total_epoches = 2
         for i in range(total_epoches):
-            eval_accuracy, model_id = cifar10_main.main(self.hp, 0, self.save_base_dir, self.data_dir, 1, total_epoches)
+            eval_accuracy, model_id = cifar10_main.main(self.hp, 0, self.save_base_dir, self.data_dir, 1, total_epoches, i)
             print 'Epoch {}, acc = {}'.format(i+1, eval_accuracy)
 
-        eval_accuracy, model_id = cifar10_main.main(self.hp, 1, self.save_base_dir, self.data_dir, total_epoches, total_epoches)
+        eval_accuracy, model_id = cifar10_main.main(self.hp, 1, self.save_base_dir, self.data_dir, total_epoches, total_epoches, 0)
 
 
 unittest.main(verbosity=2)
