@@ -188,7 +188,9 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
 class MNISTModel(ModelBase):
     def __init__(self, cluster_id, hparams, save_base_dir):
         super(MNISTModel, self).__init__(cluster_id, hparams, save_base_dir)
-        #hparams['opt_case']['lr'] /= 1000.0
+
+        # prevent the NaN error
+        hparams['opt_case']['lr'] /= 1000.0
     
     def train(self, epoches_to_train, total_epochs):
         data_dir = '/home/K8S/dataset/mnist'
