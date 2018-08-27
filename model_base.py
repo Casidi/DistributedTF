@@ -17,6 +17,9 @@ class ModelBase(object):
         self.accuracy = 0.0
 
     def train(self, num_epoch, total_epochs):
+        # 1. Training
+        # 2. Save/Restore from check points
+        # 3. Save data to csv files (The order of the fields must be identical to those in PBTCluster.plot_*)
         raise NotImplementedError
 
     def perturb_hparams(self):

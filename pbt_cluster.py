@@ -347,3 +347,55 @@ class PBTCluster:
         out_file_name = os.path.join('savedata', out_file_name)
         pyplot.savefig(out_file_name)
         print('Writing results to {}'.format(out_file_name))
+
+    def report_best3_plot(self):
+        csv_file_names = []
+        save_base_dir = './savedata'
+        for i in os.listdir(save_base_dir):
+            if i.startswith('model_'):
+                csv_file_names.append(os.path.join(save_base_dir, i, 'learning_curve.csv'))
+
+        all_acc = []
+        for i in csv_file_names:
+            if not os.path.isfile(i):
+                continue
+            acc = []
+            with open(i) as csvfile:
+                rows = csv.DictReader(csvfile)
+                for row in rows:
+                    acc.append([int(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
+            all_acc.append(acc)
+            
+        top_avg = []
+        for i in range(len(all_acc[0])):
+            column = []
+            for j in all_acc:
+                column.append(j[i][1])
+            column = sorted(column)
+            top_avg.append((i, (column[-1] + column[-2] + column[-3]) / 3.0))
+
+        pyplot.figure()
+        for i in all_acc:
+            pyplot.plot(list(zip(*i))[0], list(zip(*i))[1], color=(0.0, 0.0, 0.5, 0.3))
+            
+        pyplot.plot(list(zip(*top_avg))[0], list(zip(*top_avg))[1], 'r')
+
+        pyplot.xlabel(r'Train epochs')
+        pyplot.ylabel(r'Accuracy')
+        pyplot.grid(True)
+
+        if self.do_exploit and self.do_explore:
+            pyplot.title('PBT')
+            out_file_name = 'best3_PBT.png'
+        elif self.do_exploit and not self.do_explore:
+            pyplot.title('Exploit only')
+            out_file_name = 'best3_exploit_only.png'
+        elif not self.do_exploit and self.do_explore:
+            pyplot.title('Explore only')
+            out_file_name = 'best3_explore_only.png'
+        else:
+            pyplot.title('Grid search')
+            out_file_name = 'best3_grid_search.png'
+        out_file_name = os.path.join(save_base_dir, out_file_name)
+        pyplot.savefig(out_file_name)
+        print('Writing results to {}'.format(out_file_name))

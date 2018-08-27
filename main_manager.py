@@ -24,14 +24,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # do_explore = True
 
 master_rank = 0
-train_round = 5
+train_round = 30
 population_size = 4
 epochs_per_round = 1
 do_exploit = True
 do_explore = True
-#target_model = ToyModel
+target_model = ToyModel
 #target_model = MNISTModel
-target_model = Cifar10Model
+#target_model = Cifar10Model
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -43,14 +43,13 @@ if rank == master_rank:
                     epochs_per_round=epochs_per_round, 
                     do_exploit=do_exploit, do_explore=do_explore)
 
-    cluster.dump_all_models_to_json('savedata/initial_hp.json')
-    cluster.train(train_round)    
-    cluster.dump_all_models_to_json('savedata/final_hp.json')
+    cluster.train(train_round)
 
     if target_model == ToyModel:
         cluster.report_plot_for_toy_model()
     cluster.report_accuracy_plot()
     cluster.report_lr_plot()
+    cluster.report_best3_plot()
     cluster.report_best_model()
     cluster.kill_all_workers()
 else:
