@@ -68,9 +68,9 @@ class ModelBase(object):
                 self.hparams[key] = _perturb_float(value, range_def[key][0], range_def[key][-1])
             elif isinstance(value, int):
                 if key == 'batch_size': # Xinyi add
-                    hparams[key] = _perturb_int(value, 65, range_def[key][-1]+65)
+                    self.hparams[key] = _perturb_int(value, 65, range_def[key][-1]+65)
                 else:
-                    hparams[key] = _perturb_int(value, range_def[key][0], range_def[key][-1])
+                    self.hparams[key] = _perturb_int(value, range_def[key][0], range_def[key][-1])
             else:
                 if key != 'opt_case':
                     # Model-architecture related HP is kept the same
