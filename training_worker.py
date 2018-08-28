@@ -48,6 +48,7 @@ class TrainingWorker:
             self.worker_graphs.append(new_graph)
 
     def train(self, num_epoches, total_epochs):
+        graphs_to_remove = []
         for g in self.worker_graphs:
             #g.train(num_epoches, total_epochs)
             #print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
@@ -55,13 +56,16 @@ class TrainingWorker:
                 g.train(num_epoches, total_epochs)
             	print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
                 if math.isnan(g.get_accuracy()) == True:
-                    self.worker_graphs.remove(g)
+                    graphs_to_remove.append(g)
                     subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
                     print('Error occured , graph {} removed'.format(g.cluster_id))
             except:
-                self.worker_graphs.remove(g)
+                graphs_to_remove.append(g)
                 subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
                 print('Error occured , graph {} removed'.format(g.cluster_id))
+
+        for i in graphs_to_remove:
+            self.worker_graphs.remove(i)
 
     def get_all_values(self):
         vars_to_send = []
