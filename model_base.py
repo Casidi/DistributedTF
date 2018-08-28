@@ -67,13 +67,16 @@ class ModelBase(object):
             if isinstance(value, float):
                 self.hparams[key] = _perturb_float(value, range_def[key][0], range_def[key][-1])
             elif isinstance(value, int):
-                self.hparams[key] = _perturb_int(value, range_def[key][0], range_def[key][-1])
+                if key == 'batch_size': # Xinyi add
+                    hparams[key] = _perturb_int(value, 65, range_def[key][-1]+65)
+                else:
+                    hparams[key] = _perturb_int(value, range_def[key][0], range_def[key][-1])
             else:
                 if key != 'opt_case':
                     # Model-architecture related HP is kept the same
                     if key == 'num_filters_1' or key == 'kernel_size_1' \
                             or key == 'kernel_size_2' or key == 'activation' \
-                            or key == 'initializer':
+                            or key == 'initializer' or key == 'regularizer':
                         pass
                     else:
                         self.hparams[key] = random.choice(range_def[key])

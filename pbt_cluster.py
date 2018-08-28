@@ -36,14 +36,14 @@ class PBTCluster:
         for i in range(self.pop_size):
             all_hparams_need_training.append(generate_random_hparam())
         
-        if os.path.isfile('initial_hp.json'):
+        '''if os.path.isfile('initial_hp.json'):
             print('Initialize from initial_hp.json')
             all_hparams_need_training = []
             with open('initial_hp.json', 'r') as fp:
                 data = json.load(fp)
             for i in data:
                 all_hparams_need_training.append(i['hparams'])
-            self.pop_size = len(all_hparams_need_training)
+            self.pop_size = len(all_hparams_need_training)'''
 
         print('Population size = {}'.format(len(all_hparams_need_training)))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
@@ -162,7 +162,7 @@ class PBTCluster:
             return
         for i in os.listdir(dest_dir):
             path = os.path.join(dest_dir, i)
-            if not os.path.isdir(path) and i != 'learning_curve.csv' and i != 'theta.csv' and not i.startswith('.nfs'):
+            if not os.path.isdir(path) and i != 'learning_curve.csv' and i != 'theta.csv' and not i.startswith('events.out') and not i.startswith('.nfs'):
                 #print('Removing: {}'.format(path))
                 subprocess.call(['rm', '-f', path])
         for i in os.listdir(src_dir):
