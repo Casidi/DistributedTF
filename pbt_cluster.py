@@ -35,6 +35,15 @@ class PBTCluster:
 
         for i in range(self.pop_size):
             all_hparams_need_training.append(generate_random_hparam())
+        
+        if os.path.isfile('initial_hp.json'):
+            print('Initialize from initial_hp.json')
+            all_hparams_need_training = []
+            with open('initial_hp.json', 'r') as fp:
+                data = json.load(fp)
+            for i in data:
+                all_hparams_need_training.append(i['hparams'])
+            self.pop_size = len(all_hparams_need_training)
 
         print('Population size = {}'.format(len(all_hparams_need_training)))
         graphs_per_worker = math.ceil(float(self.pop_size) / float((self.comm.Get_size() - 1)))
@@ -328,6 +337,7 @@ class PBTCluster:
 
         pyplot.xlabel(r'Train epochs')
         pyplot.ylabel(r'Learning rate')
+        pyplot.ylim(0, 1)
         pyplot.grid(True)
 
         if self.do_exploit and self.do_explore:
@@ -401,6 +411,7 @@ class PBTCluster:
 
         pyplot.xlabel(r'Train epochs')
         pyplot.ylabel(r'Accuracy')
+        pyplot.ylim(0, 1)
         pyplot.grid(True)
 
         if self.do_exploit and self.do_explore:

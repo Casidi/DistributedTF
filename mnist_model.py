@@ -125,7 +125,7 @@ def cnn_model_fn(features, labels, mode, params):
     return tf.estimator.EstimatorSpec(
         mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def main(hp, model_id, save_base_dir, data_dir, train_epochs):
+def main(hp, model_id, save_base_dir, data_dir, train_epochs, epoch_index):
     save_dir = save_base_dir + str(model_id)
 
     with gzip.open(os.path.join(data_dir, 'train-images-idx3-ubyte.gz'), 'rb') as file:
@@ -181,7 +181,7 @@ def main(hp, model_id, save_base_dir, data_dir, train_epochs):
             writer.writeheader()
         
         for i in results_to_log:
-            writer.writerow({'global_step': i[0], 'eval_accuracy': i[1], 'optimizer':i[2], 'lr':i[3]})
+            writer.writerow({'global_step': epoch_index, 'eval_accuracy': i[1], 'optimizer':i[2], 'lr':i[3]})
 
     return eval_results['global_step'], eval_results['accuracy']
 
@@ -191,11 +191,11 @@ class MNISTModel(ModelBase):
 
         # prevent the NaN error
         #hparams['opt_case']['lr'] /= 1000.0
-        if cluster_id == 0:
-            hparams['opt_case']['lr'] *= 1000
+        #if cluster_id == 0:
+        #    hparams['opt_case']['lr'] = 10000.0
     
     def train(self, epoches_to_train, total_epochs):
         data_dir = '/home/K8S/dataset/mnist'
         step, self.accuracy = \
-            main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train)
+            main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train, self.epoches_trained)
         self.epoches_trained += 1
