@@ -43,6 +43,7 @@ if rank == master_rank:
                     epochs_per_round=epochs_per_round, 
                     do_exploit=do_exploit, do_explore=do_explore)
 
+    cluster.dump_all_models_to_json('savedata/initial_hp.json')
     cluster.train(train_round)
 
     if target_model == ToyModel:

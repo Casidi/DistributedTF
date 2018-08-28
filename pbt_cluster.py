@@ -363,14 +363,35 @@ class PBTCluster:
                 for row in rows:
                     acc.append([int(row[rows.fieldnames[0]]), float(row[rows.fieldnames[1]])])
             all_acc.append(acc)
+
+        max_record_length = -1
+        for i in all_acc:
+            if len(i) > max_record_length:
+                max_record_length = len(i)
             
         top_avg = []
-        for i in range(len(all_acc[0])):
+        for i in range(max_record_length):
             column = []
             for j in all_acc:
-                column.append(j[i][1])
+                if len(j) > i:
+                    column.append(j[i][1])
             column = sorted(column)
-            top_avg.append((i, (column[-1] + column[-2] + column[-3]) / 3.0))
+
+            epoch_index = 0
+            for j in all_acc:
+                if len(j) > i:
+                    epoch_index = j[i][0]
+                    break
+
+            if len(column) == 0:
+                top_avg.append((epoch_index, 0.0))
+            elif len(column) < 3:
+                sum = 0.0
+                for j in column:
+                    sum += j
+                top_avg.append((epoch_index, sum/len(column)))
+            else:    
+                top_avg.append((epoch_index, (column[-1] + column[-2] + column[-3]) / 3.0))
 
         pyplot.figure()
         for i in all_acc:
