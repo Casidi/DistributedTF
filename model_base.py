@@ -1,3 +1,8 @@
+'''
+The abstract base class of the models.
+Any model using this PBT implementation must inherit this class
+'''
+
 import numpy as np
 import random
 

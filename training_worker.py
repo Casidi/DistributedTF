@@ -1,3 +1,7 @@
+'''
+The worker class. The workers only execute the commands from the master.
+'''
+
 from __future__ import print_function
 import math
 import subprocess

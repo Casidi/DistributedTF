@@ -1,3 +1,7 @@
+'''
+The common entry point of all nodes.
+'''
+
 from __future__ import print_function
 
 from mpi4py import MPI
@@ -12,8 +16,9 @@ from toy_model import ToyModel
 from mnist_model import MNISTModel
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
+##################
 # configurations
+##################
 # The parameters to generate toy model graphs
 # master_rank = 0
 # train_round = 30
@@ -39,6 +44,7 @@ if rank == master_rank:
     subprocess.call(['rm', '-rf', 'savedata'])
     subprocess.call(['mkdir', 'savedata'])
 
+    # Generates HPs and send to workers.
     cluster = PBTCluster(population_size, comm, master_rank, 
                     epochs_per_round=epochs_per_round, 
                     do_exploit=do_exploit, do_explore=do_explore)
