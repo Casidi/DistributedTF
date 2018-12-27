@@ -195,7 +195,7 @@ class MNISTModel(ModelBase):
         #    hparams['opt_case']['lr'] = 10000.0
     
     def train(self, epoches_to_train, total_epochs):
-        data_dir = '/home/K8S/dataset/mnist'
+        data_dir = './datasets/'
         step, self.accuracy = \
             main(self.hparams, self.cluster_id, self.save_base_dir, data_dir, epoches_to_train, self.epoches_trained)
         self.epoches_trained += 1

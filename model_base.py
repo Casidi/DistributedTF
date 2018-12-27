@@ -68,7 +68,7 @@ class ModelBase(object):
                 return random.randint(min, max)
 
         range_def = get_hp_range_definition()
-        for key, value in self.hparams.iteritems():
+        for key, value in self.hparams.items():
             if isinstance(value, float):
                 self.hparams[key] = _perturb_float(value, range_def[key][0], range_def[key][-1])
             elif isinstance(value, int):

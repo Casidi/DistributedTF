@@ -94,4 +94,6 @@ def load_hp_space():
 
 def generate_random_hparam():
     hp_space = load_hp_space()
-    return hyperopt.pyll.stochastic.sample(hp_space)
+    sample = hyperopt.pyll.stochastic.sample(hp_space)
+    sample['batch_size'] = int(sample['batch_size'])
+    return sample

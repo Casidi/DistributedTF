@@ -1,5 +1,6 @@
 MNIST_data/
 savedata/
+datasets/
 resnet/model_*
 __pycache__/
 *.pyc

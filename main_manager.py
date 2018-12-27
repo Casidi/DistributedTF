@@ -29,14 +29,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # do_explore = True
 
 master_rank = 0
-train_round = 20
-population_size = 20
+train_round = 2
+population_size = 4
 epochs_per_round = 1
 do_exploit = True
 do_explore = True
 #target_model = ToyModel
-#target_model = MNISTModel
-target_model = Cifar10Model
+target_model = MNISTModel
+#target_model = Cifar10Model
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()

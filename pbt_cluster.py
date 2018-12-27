@@ -25,15 +25,6 @@ from constants import WorkerInstruction
 from constants import get_hp_range_definition, load_hp_space
 
 class PBTCluster:
-	'''
-	Parameters:
-	pop_size: int, the population size
-	comm: The MPI communicator to send/recv data
-	master_rank: int, the rank of the master node in the cluster
-	epochs_per_round: int, do exploit/explore every ? epochs
-	do_exploit: bool, do exploit or not
-	do_explore: bool, do explore or not
-	'''
     def __init__(self, pop_size, comm, master_rank, epochs_per_round, do_exploit=True, do_explore=True):
         self.pop_size = pop_size
         self.comm = comm
@@ -91,9 +82,6 @@ class PBTCluster:
         for req in reqs:
             req.wait()
 
-	'''
-	round_num: int, rounds to train. How many epoches in each round is set in the constructor
-	'''
     def train(self, round_num):
         start_time = time.time()
         for round in range(round_num):

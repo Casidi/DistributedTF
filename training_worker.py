@@ -58,7 +58,7 @@ class TrainingWorker:
             #print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
             try:
                 g.train(num_epoches, total_epochs)
-            	print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
+                print('Model {} epoch = {},  acc = {}'.format(g.cluster_id, g.epoches_trained, g.get_accuracy()))
                 if math.isnan(g.get_accuracy()) == True:
                     graphs_to_remove.append(g)
                     subprocess.call(['rm', '-rf', 'savedata/model_' + str(g.cluster_id)])
