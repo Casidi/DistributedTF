@@ -33,6 +33,8 @@ class PBTCluster:
         self.do_exploit = do_exploit
         self.do_explore = do_explore        
 
+        self.exploit_time = 0
+
         self.dispatch_hparams_to_workers()
 
     def dispatch_hparams_to_workers(self):
@@ -85,6 +87,7 @@ class PBTCluster:
     def train(self, round_num):
         start_time = time.time()
         for round in range(round_num):
+            round_start_time = time.time()
             print('\nRound {}'.format(round))
 
             reqs = []
@@ -94,16 +97,13 @@ class PBTCluster:
             for req in reqs:
                 req.wait()
 
-            # No need to do exploit & explore for the last round.
-            if round == round_num-1:
-                break
-
             if self.do_exploit:
                 self.exploit()
+
             if self.do_explore:
                 self.explore()
 
-            print('Elapsed time: {}'.format(datetime.timedelta(seconds=(time.time()-start_time))))
+            print('Round elapsed time: {}\n'.format(datetime.timedelta(seconds=(time.time()-round_start_time))))
 
         self.flush_all_instructions()
         end_time = time.time()
@@ -126,6 +126,7 @@ class PBTCluster:
                 for d in data:
                     cluster_id_to_worker_rank[d[0]] = i
 
+        exploit_begin_time = time.time()
         # copy top 25% to bottom 25%
         all_values = sorted(all_values, key=lambda value: value[1])
         self.pop_size = len(all_values)
@@ -160,6 +161,8 @@ class PBTCluster:
             reqs.append(self.comm.isend((WorkerInstruction.SET, values), dest=worker_rank))
         for req in reqs:
             req.wait()
+
+        self.exploit_time += time.time() - exploit_begin_time
 
     def copyfiles(self, src_dir, dest_dir):
         if src_dir == dest_dir:
@@ -202,6 +205,36 @@ class PBTCluster:
                 data = self.comm.recv(source=i)
                 all_values += data
         return all_values
+
+    def print_profiling_info(self):
+        reqs = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                print('Requesting profiling info for worker {}'.format(i))
+                reqs.append(self.comm.isend((WorkerInstruction.GET_PROFILING_INFO,), dest=i))
+        for req in reqs:
+            req.wait()
+
+        all_infos = []
+        for i in range(0, self.comm.Get_size()):
+            if i != self.master_rank:
+                print('Recv from worker {}'.format(i))
+                data = self.comm.recv(source=i)
+                all_infos.append(data)
+
+        total_train_time = 0
+        total_explore_time = 0
+        for i in all_infos:
+            total_train_time += i[0]
+            total_explore_time += i[1]
+        total_train_time /= len(all_infos)
+        total_explore_time /= len(all_infos)
+        
+        print('')
+        print('=======Profiling Information========')
+        print('Total train time: {}'.format(datetime.timedelta(seconds=(total_train_time))))
+        print('Total exploit time: {}'.format(datetime.timedelta(seconds=(self.exploit_time))))
+        print('Total explore time: {}\n'.format(datetime.timedelta(seconds=(total_explore_time))))
 
     def dump_all_models_to_json(self, filename):
         all_values = self.get_all_values()

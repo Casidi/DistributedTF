@@ -9,6 +9,7 @@ class WorkerInstruction(Enum):
     GET = 3
     SET = 4
     EXPLORE = 5
+    GET_PROFILING_INFO = 6
 
 def get_hp_range_definition():
     range_def_dict = {

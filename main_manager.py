@@ -29,7 +29,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # do_explore = True
 
 master_rank = 0
-train_round = 2
+train_round = 4
 population_size = 4
 epochs_per_round = 1
 do_exploit = True
@@ -58,6 +58,7 @@ if rank == master_rank:
     cluster.report_lr_plot()
     cluster.report_best3_plot()
     cluster.report_best_model()
+    cluster.print_profiling_info()
     cluster.kill_all_workers()
 else:
     worker = TrainingWorker(comm, master_rank, target_model_class=target_model)

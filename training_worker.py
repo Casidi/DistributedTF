@@ -5,6 +5,7 @@ The worker class. The workers only execute the commands from the master.
 from __future__ import print_function
 import math
 import subprocess
+import time
 
 from constants import WorkerInstruction
 
@@ -16,6 +17,9 @@ class TrainingWorker:
         self.comm = comm
         self.master_rank = master_rank
         self.target_model_class = target_model_class
+
+        self.train_time = 0
+        self.explore_time = 0
 
     def main_loop(self):
         while True:
@@ -37,6 +41,8 @@ class TrainingWorker:
                 self.set_values(vars_to_set)
             elif inst == WorkerInstruction.EXPLORE:
                 self.explore_necessary_graphs()
+            elif inst == WorkerInstruction.GET_PROFILING_INFO:
+                self.comm.send([self.train_time, self.explore_time], dest=self.master_rank)
             elif inst == WorkerInstruction.EXIT:
                 break
             else:
@@ -52,6 +58,8 @@ class TrainingWorker:
             self.worker_graphs.append(new_graph)
 
     def train(self, num_epoches, total_epochs):
+        train_begin_time = time.time()
+
         graphs_to_remove = []
         for g in self.worker_graphs:
             #g.train(num_epoches, total_epochs)
@@ -71,6 +79,8 @@ class TrainingWorker:
         for i in graphs_to_remove:
             self.worker_graphs.remove(i)
 
+        self.train_time += time.time() - train_begin_time
+
     def get_all_values(self):
         vars_to_send = []
         for g in self.worker_graphs:
@@ -85,8 +95,11 @@ class TrainingWorker:
                     g.need_explore = True
 
     def explore_necessary_graphs(self):
+        explore_begin_time = time.time()
         for g in self.worker_graphs:
             if g.need_explore or self.is_expolore_only:
                 print('[{}]Exploring graph {}'.format(self.rank, g.cluster_id))
                 g.perturb_hparams()
                 g.need_explore = False
+
+        self.explore_time += time.time() - explore_begin_time
