@@ -108,6 +108,7 @@ class PBTCluster:
         self.flush_all_instructions()
         end_time = time.time()
         print('Total elapsed time: {}'.format(datetime.timedelta(seconds=(end_time-start_time))))
+        return end_time - start_time
 
     def exploit(self):
         reqs = []

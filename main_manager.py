@@ -14,6 +14,7 @@ from training_worker import TrainingWorker
 from cifar10_model import Cifar10Model
 from toy_model import ToyModel
 from mnist_model import MNISTModel
+import sys
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 ##################
@@ -29,11 +30,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # do_explore = True
 
 master_rank = 0
-train_round = 4
-population_size = 4
+train_round = 20 
+population_size = 20
 epochs_per_round = 1
 do_exploit = True
 do_explore = True
+
+if len(sys.argv) >= 2:
+    population_size = int(sys.argv[1])
+
 #target_model = ToyModel
 target_model = MNISTModel
 #target_model = Cifar10Model
@@ -50,7 +55,10 @@ if rank == master_rank:
                     do_exploit=do_exploit, do_explore=do_explore)
 
     cluster.dump_all_models_to_json('savedata/initial_hp.json')
-    cluster.train(train_round)
+    elapsed_time = cluster.train(train_round)
+
+    with open('test_results.txt', 'a') as result_file:
+        result_file.write('n = {}, pop_size = {}, time = {}s\n'.format(comm.Get_size(), population_size, elapsed_time))
 
     if target_model == ToyModel:
         cluster.report_plot_for_toy_model()
